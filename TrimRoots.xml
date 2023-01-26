@@ -1,0 +1,6 @@
+﻿<linker>
+    <assembly fullname="connect-to-url">
+        <!-- The properties are set using reflection when parsing the command line -->
+        <type fullname="ConnectToUrl.CommandLineArgs" preserve="all" />
+    </assembly>
+</linker>
