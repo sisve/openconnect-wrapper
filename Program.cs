@@ -12,19 +12,19 @@ internal static class Program {
         CommandLineArgs? parsedArgs;
         if (!CommandLineArgs.TryParse(args, out parsedArgs)) {
             Console.Error.WriteLine("Failed to parse command line arguments.");
-            return FAILURE;
+            return FailWithExitCode(FAILURE);
         }
 
         if (args.Length == 0) {
             Console.Error.WriteLine("Expected a single parameter with the url to connect to.");
-            return FAILURE;
+            return FailWithExitCode(FAILURE);
         }
 
         var dllDirectory = @"C:\Program Files\OpenConnect";
         var dllPath = Path.Combine(dllDirectory, "libopenconnect-5.dll");
         if (!File.Exists(dllPath)) {
             Console.Error.WriteLine($"Missing file {dllPath}, have you installed OpenConnect?");
-            return FAILURE;
+            return FailWithExitCode(FAILURE);
         }
 
         Console.WriteLine($"IntPtr.Size={IntPtr.Size}");
@@ -56,7 +56,7 @@ internal static class Program {
 
             var connectResult = connection.Connect();
             if (connectResult != SUCCESS) {
-                return connectResult;
+                return FailWithExitCode(connectResult);
             }
 
             Console.CancelKeyPress += (_, eventArgs) => {
@@ -69,6 +69,21 @@ internal static class Program {
 
             return SUCCESS;
         }
+    }
+
+    private static Int32 FailWithExitCode(Int32 exitCode) {
+        if (Environment.GetEnvironmentVariable("PROMPT") == null) {
+            // The PROMPT environment variable is present when executed from a
+            // command prompt, but is missing when executed from a shortcut.
+            //
+            // We want the window to stay open in case of failures, so the user
+            // can read the output to debug the problem.
+            Console.WriteLine();
+            Console.WriteLine("<Press enter to exit>");
+            Console.ReadLine();
+        }
+
+        return exitCode;
     }
 
     private static String? GetVpncScriptContent() {

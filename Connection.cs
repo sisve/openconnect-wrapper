@@ -149,6 +149,16 @@ internal unsafe class Connection {
                 Console.Error.WriteLine($"openconnect_setup_tun_device returned error {setupTunDeviceResult}");
 
                 openconnect_vpninfo_free(_vpninfo);
+
+                Console.WriteLine();
+                Console.Error.WriteLine("!!!");
+                Console.Error.WriteLine("!!! A common problem for this function to fail is when there's no available");
+                Console.Error.WriteLine("!!! virtual ethernet adapter for TAP-Windows to use. Make sure that you have");
+                Console.Error.WriteLine("!!! enough, and read https://github.com/sisve/openconnect-wrapper/ for help");
+                Console.Error.WriteLine("!!! setting up additional adapters.");
+                Console.Error.WriteLine("!!!");
+                Console.WriteLine();
+
                 return FAILURE;
             }
         }
