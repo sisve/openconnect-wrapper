@@ -46,10 +46,10 @@ internal unsafe class Connection {
         ProgressDelegate = ReportProgress;
     }
 
-    public String? Url { get; set; }
-    public Int32 MinLoggingLevel { get; set; }
-    public String? ScriptPath { get; set; }
-    public String? SecondaryPassword { get; set; }
+    public String? Url { get; init; }
+    public Int32 MinLoggingLevel { get; init; }
+    public String? ScriptPath { get; init; }
+    public String? SecondaryPassword { get; init; }
 
     internal Int32 Connect() {
         if (Url == null) {
