@@ -227,7 +227,7 @@ internal unsafe class Connection {
             Console.WriteLine($"DEBUG: formMethod={F(formMethod)}");
         }
 
-        if (formMethod != "/") {
+        if (formAction != "/") {
             Console.WriteLine($"DEBUG: formAction={F(formAction)}");
         }
 
