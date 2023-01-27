@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using ConnectToUrl;
 
 internal static class Winsock2 {
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
@@ -22,15 +23,24 @@ internal static class Winsock2 {
 
     [DllImport("Ws2_32.dll", EntryPoint = "ioctlsocket")]
     public static extern unsafe Int32 ioctlsocket(
-        /* SOCKET */ IntPtr s,
-        /* long */ Int32 cmd,
-        /* u_long* */ UInt32* argp
+        [OriginalType("SOCKET")]
+        IntPtr s,
+
+        [OriginalType("long")]
+        Int32 cmd,
+
+        [OriginalType("u_long")]
+        UInt32* argp
     );
 
     [DllImport("ws2_32.dll", EntryPoint = "send", SetLastError = true)]
     public static extern unsafe Int32 send(
-        /* SOCKET */ IntPtr s,
-        /* const char* */ Char* buf,
+        [OriginalType("SOCKET")]
+        IntPtr s,
+
+        [OriginalType("const char*")]
+        Char* buf,
+
         Int32 len,
         Int32 flags
     );

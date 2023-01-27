@@ -15,13 +15,14 @@ internal unsafe class VaListReader : IPrintfValueProvider {
     private readonly IntPtr _restPtr;
 
     private Int32 _offset;
-    private IntPtr CurrentPosition => (_offset == 0)
+
+    private IntPtr CurrentPosition => _offset == 0
         ? _firstPtr
         : _restPtr + _offset;
 
     public VaListReader(void** ptr) {
         _firstPtr = new IntPtr(ptr);
-        
+
 #if DEBUG
         var offset = 17 * IntPtr.Size;
 #else
@@ -29,7 +30,7 @@ internal unsafe class VaListReader : IPrintfValueProvider {
 #endif
 
         _restPtr = new IntPtr(ptr) + offset;
-       
+
         // OutputDebug(_firstPtr, size: 0x100);
         // OutputDebug(_restPtr, size: 0x040);
         // Console.WriteLine($"offset = {offset:X4}");
@@ -149,17 +150,17 @@ internal unsafe class VaListReader : IPrintfValueProvider {
 
     public Int32 ReadInt32() {
         var var = Marshal.ReadInt32(CurrentPosition);
-       
+
         // Int32 seem to take up 64 bits, which happen
         // to be IntPtr.Size when this was written.
-        _offset += sizeof(IntPtr); 
-       
+        _offset += sizeof(IntPtr);
+
         return var;
     }
 
     public Int64 ReadInt64() {
         var var = Marshal.ReadInt64(CurrentPosition);
-        
+
         // Assumption: everything is taking up IntPtr.Size.
         // This happen to be the same as sizeof(Int64) when
         // this was written.
@@ -179,7 +180,7 @@ internal unsafe class VaListReader : IPrintfValueProvider {
     public String? ReadStringUnicode() {
         var ptr = Marshal.ReadIntPtr(CurrentPosition);
         _offset += IntPtr.Size;
-        
+
         var str = Marshal.PtrToStringUni(ptr);
         return str;
     }

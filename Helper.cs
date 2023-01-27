@@ -20,7 +20,7 @@ public static class Helper {
     }
 
     public static Int16 MakeWord(Byte low, Byte high) {
-        return (Int16)((high << 8) | low);
+        return (Int16)(high << 8 | low);
     }
 
     public static unsafe String? PtrToStringAnsi(Char* ch) {

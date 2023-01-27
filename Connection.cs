@@ -212,6 +212,7 @@ internal unsafe class Connection {
     }
 
     private record AuthFormField(String Name);
+
     private Int32 ProcessAuthForm(void* privdata, oc_auth_form* form) {
         String F(String? input) {
             return input switch {
@@ -220,14 +221,14 @@ internal unsafe class Connection {
                 _ => input,
             };
         }
-        
+
         var formBanner = Helper.PtrToStringAnsi(form->banner);
         var formError = Helper.PtrToStringAnsi(form->error);
         var formAction = Helper.PtrToStringAnsi(form->action);
         var formMessage = Helper.PtrToStringAnsi(form->message);
         var formAuthId = Helper.PtrToStringAnsi(form->auth_id);
         var formMethod = Helper.PtrToStringAnsi(form->method);
-        
+
         Console.WriteLine("####################### AUTHENTICATION #######################");
         if (!String.IsNullOrWhiteSpace(formBanner)) {
             Console.WriteLine(formBanner);
@@ -257,15 +258,15 @@ internal unsafe class Connection {
         if (!Helper.IsNull(ocField)) {
             Console.WriteLine("Fields:");
         }
-        
+
         while (!Helper.IsNull(ocField)) {
             var fieldName = Helper.PtrToStringAnsi(ocField->name);
             var fieldLabel = Helper.PtrToStringAnsi(ocField->label);
             var fieldValue = Helper.PtrToStringAnsi(ocField->_value);
-            
+
             Console.WriteLine($" * Name: {F(fieldName)} ({ocField->type})");
             Console.WriteLine($"   Label: {F(fieldLabel)}");
-            
+
             if (fieldValue != null) {
                 Console.WriteLine($"   Value: {F(fieldValue)}");
             }
@@ -286,7 +287,7 @@ internal unsafe class Connection {
             var messageText = String.IsNullOrWhiteSpace(formMessage)
                 ? $"Enter credentials for the VPN connection to {Url}"
                 : formMessage;
-            
+
             // We've been asked about credentials. If we already have credentials,
             // assume those have been faulty.
             if (_currentCredentials != null) {
@@ -355,7 +356,7 @@ internal unsafe class Connection {
         var vaListReader = new VaListReader(&vaList);
         ReportProgress(privdata, level, formatPtr, vaListReader);
     }
-    
+
     private void ReportProgress(void* privdata, Int32 level, Char* formatPtr, VaListReader vaListReader) {
         // Unclear naming; the numeric values are lower for severe log levels
         // Choosing PRG_INFO (1) means we should discard PRG_DEBUG (2) and

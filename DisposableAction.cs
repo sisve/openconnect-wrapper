@@ -3,7 +3,8 @@
 namespace ConnectToUrl;
 
 internal class DisposableAction : IDisposable {
-    public static DisposableAction Noop { get; } = new DisposableAction(() => { });
+    public static DisposableAction Noop { get; } = new DisposableAction(() => {
+    });
 
     private readonly Action _action;
     private Boolean _hasRun;

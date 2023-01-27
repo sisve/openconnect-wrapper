@@ -57,11 +57,17 @@ internal abstract unsafe class OpenConnect {
     [StructLayout(LayoutKind.Sequential)]
     public struct oc_form_opt {
         public oc_form_opt* next;
-        /* int */ public OC_FORM_OPT_TYPE type;
+
+        [OriginalType("int")]
+        public OC_FORM_OPT_TYPE type;
+
         public Char* name;
         public Char* label;
         public Char* _value;
-        /* unsigned int */ public OC_FORM_OPT_FLAGS flags;
+
+        [OriginalType("unsigned int")]
+        public OC_FORM_OPT_FLAGS flags;
+
         public void* reserved;
     }
 
@@ -96,40 +102,45 @@ internal abstract unsafe class OpenConnect {
 
     [StructLayout(LayoutKind.Sequential)]
     public struct oc_split_include {
-        /*const*/
+        [OriginalType("const char*")]
         public Char* route;
         public oc_split_include* next;
     }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct oc_ip_info {
-        /*const*/
+        [OriginalType("const char*")]
         public Char* addr;
 
-        /*const*/
-        public Char* netmask; /* Just the netmask, in dotted-quad form. */
+        /// <summary>
+        ///   Just the netmask, in dotted-quad form.
+        /// </summary>
+        [OriginalType("const char*")]
+        public Char* netmask;
 
-        /*const*/
+        [OriginalType("const char*")]
         public Char* addr6;
 
-        /*const*/
-        public Char* netmask6; /* This is the IPv6 address *and* netmask
-			       * e.g. "2001::dead:beef/128". */
+        /// <summary>
+        ///   This is the IPv6 address *and* netmask e.g. "2001::dead:beef/128".
+        /// </summary>
+        [OriginalType("const char*")]
+        public Char* netmask6; /*  */
 
-        /*const char *dns[3];*/
+        [OriginalType("const char* dns[3]")]
         public Char* dns1;
         public Char* dns2;
         public Char* dns3;
 
-        /*const char *nbns[3]*/
+        [OriginalType("const char* nbns[3]")]
         public Char* nbns1;
         public Char* nbns2;
         public Char* nbns3;
 
-        /*const*/
+        [OriginalType("const char*")]
         public Char* domain;
 
-        /*const*/
+        [OriginalType("const char*")]
         public Char* proxy_pac;
         public Int32 mtu;
 
@@ -174,8 +185,12 @@ internal abstract unsafe class OpenConnect {
     public delegate void openconnect_progress_vfn(
         void* privdata,
         Int32 level,
-        /* const char* */ /*[In, MarshalAs(UnmanagedType.LPStr)] String*/ Char* fmt,
-        /* ... */ void* args
+
+        [OriginalType("const char*")]
+        Char* fmt,
+
+        [OriginalType("...")]
+        void* args
     );
 
     public delegate void openconnect_setup_tun_vfn(
@@ -185,7 +200,9 @@ internal abstract unsafe class OpenConnect {
     [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_set_option_value")]
     public static extern Int32 openconnect_set_option_value(
         oc_form_opt* opt,
-        /* const char* */ [MarshalAs(UnmanagedType.LPStr)] String value
+
+        [OriginalType("const char*")]
+        String value
     );
 
     [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_obtain_cookie")]
@@ -196,17 +213,23 @@ internal abstract unsafe class OpenConnect {
     [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_set_reported_os")]
     public static extern Int32 openconnect_set_reported_os(
         openconnect_info* param0,
-        /* const char* */ [In, MarshalAs(UnmanagedType.LPStr)] String os
+
+        [OriginalType("const char*")]
+        [MarshalAs(UnmanagedType.LPStr)]
+        String os
     );
 
     [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_get_ip_info")]
     public static extern Int32 openconnect_get_ip_info(
         openconnect_info* vpninfo,
-        /* const struct */
+
+        [OriginalType("const struct oc_ip_info**")]
         oc_ip_info** info,
-        /* const struct */
+
+        [OriginalType("const struct oc_vpn_option**")]
         oc_vpn_option** cstp_options,
-        /* const struct */
+
+        [OriginalType("const struct oc_vpn_option**")]
         oc_vpn_option** dtls_options
     );
 
@@ -228,7 +251,10 @@ internal abstract unsafe class OpenConnect {
     [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_parse_url")]
     public static extern Int32 openconnect_parse_url(
         openconnect_info* vpninfo,
-        /* const char* */ [In, MarshalAs(UnmanagedType.LPStr)] String url
+
+        [OriginalType("const char*")]
+        [MarshalAs(UnmanagedType.LPStr)]
+        String url
     );
 
     [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_set_cert_expiry_warning")]
@@ -262,8 +288,15 @@ internal abstract unsafe class OpenConnect {
     [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_setup_tun_device")]
     public static extern Int32 openconnect_setup_tun_device(
         openconnect_info* vpninfo,
-        /* const char* */ [MarshalAs(UnmanagedType.LPStr)] String? vpnc_script,
-        /* const char* */ [MarshalAs(UnmanagedType.LPStr)] String? ifname
+
+        [OriginalType("const char*")]
+        [MarshalAs(UnmanagedType.LPStr)]
+        String? vpnc_script,
+
+        [OriginalType("const char*")]
+        [MarshalAs(UnmanagedType.LPStr)]
+
+        String? ifname
     );
 
     [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_mainloop")]
@@ -276,7 +309,10 @@ internal abstract unsafe class OpenConnect {
     [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_vpninfo_new")]
     [return: NotNull]
     public static extern openconnect_info* openconnect_vpninfo_new(
-        /* const char* */ [In, MarshalAs(UnmanagedType.LPStr)] String useragent,
+        [OriginalType("const char*")]
+        [MarshalAs(UnmanagedType.LPStr)]
+        String useragent,
+
         openconnect_validate_peer_cert_vfn? param1,
         openconnect_write_new_config_vfn? param2,
         openconnect_process_auth_form_vfn? param3,
@@ -299,7 +335,6 @@ internal abstract unsafe class OpenConnect {
         oc_vpn_proto* protos
     );
 
-
     [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_get_protocol")]
     public static extern Char* openconnect_get_protocol(
         openconnect_info* vpninfo
@@ -308,7 +343,10 @@ internal abstract unsafe class OpenConnect {
     [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_set_protocol")]
     public static extern Int32 openconnect_set_protocol(
         openconnect_info* vpninfo,
-        /* const char* */ [In, MarshalAs(UnmanagedType.LPStr)] String protocol
+
+        [OriginalType("const char*")]
+        [MarshalAs(UnmanagedType.LPStr)]
+        String protocol
     );
 
     [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_set_setup_tun_handler")]

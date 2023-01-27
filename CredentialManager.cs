@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using ConnectToUrl;
 
 public static class CredentialManager {
     internal const Int32 NO_ERROR = 0;
@@ -11,16 +12,16 @@ public static class CredentialManager {
     internal struct CREDUI_INFOW {
         public Int32 cbSize;
 
-        /* HWND */
+        [OriginalType("HWND")]
         public IntPtr hwndParent;
 
-        /* PCWSTR */
+        [OriginalType("PCWSTR")]
         public String pszMessageText;
 
-        /* PCWSTR */
+        [OriginalType("PCWSTR")]
         public String pszCaptionText;
 
-        /* HBITMAP */
+        [OriginalType("HBITMAP")]
         public IntPtr hbmBanner;
     }
 
@@ -47,21 +48,42 @@ public static class CredentialManager {
 
     [DllImport("credui.dll", EntryPoint = "CredUIPromptForCredentialsW", CharSet = CharSet.Unicode)]
     internal static extern Int32 CredUIPromptForCredentialsW(
-        /* PCREDUI_INFOW */ ref CREDUI_INFOW creditUR,
-        /* PCWSTR */ String targetName,
-        /* PCtxtHandle */ IntPtr pContext,
+        [OriginalType("PCREDUI_INFOW")]
+        ref CREDUI_INFOW creditUR,
+
+        [OriginalType("PCWSTR")]
+        String targetName,
+
+        [OriginalType("PCtxtHandle")]
+        IntPtr pContext,
+
         Int32 iError,
-        /* PWSTR */ StringBuilder userName,
-        /* ULONG */ Int32 maxUserName,
-        /* PWSTR */ StringBuilder password,
-        /* ULONG */ Int32 maxPassword,
-        /* BOOL* */ [MarshalAs(UnmanagedType.Bool)] ref Boolean pfSave,
-        /* DWORD */ CREDUI_FLAGS flags
+
+        [OriginalType("PWSTR")]
+        StringBuilder userName,
+
+        [OriginalType("ULONG")]
+        Int32 maxUserName,
+
+        [OriginalType("PWSTR")]
+        StringBuilder password,
+
+        [OriginalType("ULONG")]
+        Int32 maxPassword,
+
+        [MarshalAs(UnmanagedType.Bool)]
+        ref Boolean pfSave,
+
+        [OriginalType("DWORD")]
+        CREDUI_FLAGS flags
     );
 
     [DllImport("credui.dll", EntryPoint = "CredUIConfirmCredentialsW", CharSet = CharSet.Unicode)]
     internal static extern Int32 CredUIConfirmCredentialsW(
-        /* PCWSTR */ String targetName,
-        [MarshalAs(UnmanagedType.Bool)] Boolean confirm
+        [OriginalType("PCWSTR")]
+        String targetName,
+
+        [MarshalAs(UnmanagedType.Bool)]
+        Boolean confirm
     );
 }
