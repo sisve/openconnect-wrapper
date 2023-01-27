@@ -22,7 +22,6 @@ internal unsafe class Connection {
     private const Int32 EPIPE = 32;
     private const Int32 EPERM = 1;
 
-    private readonly ManualResetEventSlim _shouldExit = new ManualResetEventSlim();
     private readonly ManualResetEventSlim _hasDisconnected = new ManualResetEventSlim();
     private readonly Thread _loopThread;
 
@@ -380,51 +379,54 @@ internal unsafe class Connection {
 
     private void MainLoop() {
         using (ConsoleTitle.Change($"VPN: {Url}")) {
-            while (!_shouldExit.IsSet) {
-                var mainloopResult = openconnect_mainloop(_vpninfo!, 30, RECONNECT_INTERVAL_MIN);
-                if (mainloopResult < 0) {
-                    switch (mainloopResult) {
-                        case -EINTR: // Response to OC_CMD_CANCEL
-                        case -ECONNABORTED: // Response to OC_CMD_DETACH
-                            return;
-                        case -EPIPE:
-                            Console.Error.WriteLine("openconnect_mainloop returned EPIPE: remote end explicitly terminated the session.");
+            var mainloopResult = openconnect_mainloop(_vpninfo!, 30, RECONNECT_INTERVAL_MIN);
+            switch (mainloopResult) {
+                case 0:
+                    // The mainloop exited after an OC_CMD_PAUSE. This is
+                    // used to pause and resume vpn connections. We do not
+                    // support such functionality.
+                    // 
+                    break;
 
-                            return;
-                        case -EPERM:
-                            Console.Error.WriteLine("openconnect_mainloop returned EPERM: gateway sent 401 Unauthorized");
-
-                            return;
-                        default:
-                            Console.Error.WriteLine($"openconnect_mainloop returned {mainloopResult}, disconnected?");
-
-                            return;
-                    }
-                }
+                case -EINTR: // Response to OC_CMD_CANCEL
+                case -ECONNABORTED: // Response to OC_CMD_DETACH
+                    break;
+                case -EPIPE:
+                    Console.Error.WriteLine("openconnect_mainloop returned EPIPE: remote end explicitly terminated the session.");
+                    break;
+                case -EPERM:
+                    Console.Error.WriteLine("openconnect_mainloop returned EPERM: gateway sent 401 Unauthorized");
+                    break;
+                default:
+                    Console.Error.WriteLine($"openconnect_mainloop returned {mainloopResult}, disconnected?");
+                    break;
             }
+
+            // Free up resources
+            _cmd_fd = INVALID_SOCKET;
+
+            openconnect_vpninfo_free(_vpninfo!);
+            _vpninfo = null;
+
+            // Set _hasDisconnected so that anyone using WaitForDisconnect
+            // knows that we're not longer connected.
+            _hasDisconnected.Set();
         }
     }
 
     public void Disconnect() {
-        _shouldExit.Set();
+        if (_cmd_fd == INVALID_SOCKET) {
+            Console.Error.WriteLine("The command socket has been destroyed.");
+            return;
+        }
 
-        if (_cmd_fd != INVALID_SOCKET) {
-            var bytesSent = send(_cmd_fd, OC_CMD_CANCEL, 1, 0);
-            if (bytesSent < 0) {
-                Console.Error.WriteLine($"send returned error {bytesSent}");
-            }
-
-            _cmd_fd = INVALID_SOCKET;
+        var bytesSent = send(_cmd_fd, OC_CMD_CANCEL, 1, 0);
+        if (bytesSent < 0) {
+            Console.Error.WriteLine($"send returned error {bytesSent}");
+            return;
         }
 
         _loopThread.Join();
-
-        if (_vpninfo != null) {
-            openconnect_vpninfo_free(_vpninfo);
-            _vpninfo = null;
-        }
-
-        _hasDisconnected.Set();
     }
 
     public void WaitForDisconnect() {
