@@ -12,7 +12,7 @@ namespace ConnectToUrl;
 /// <remarks>
 ///   See https://cplusplus.com/reference/cstdio/printf/
 /// </remarks>
-public static class PrintfFormatter {
+internal static class PrintfFormatter {
     public static String Format(String format, IPrintfValueProvider reader) {
         if (!format.Contains('%')) {
             // There are no format specifications
@@ -268,7 +268,7 @@ public static class PrintfFormatter {
     }
 }
 
-public interface IPrintfValueProvider {
+internal interface IPrintfValueProvider {
     public Int32 ReadInt32();
     public Int64 ReadInt64();
     public String? ReadStringAnsi();

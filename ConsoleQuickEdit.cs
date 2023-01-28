@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using ConnectToUrl;
 
-public static class ConsoleQuickEdit {
+internal static class ConsoleQuickEdit {
     // This flag enables the user to use the mouse to select and edit text.
     // To enable this mode, use ENABLE_QUICK_EDIT_MODE | ENABLE_EXTENDED_FLAGS.
     // To disable this mode, use ENABLE_EXTENDED_FLAGS without this flag.

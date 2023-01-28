@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ConnectToUrl;
 
-public static class ConsoleTitle {
+internal static class ConsoleTitle {
     [SuppressMessage("Interoperability", "CA1416:Validate platform compatibility")]
     public static IDisposable Change(String newTitle) {
         try {

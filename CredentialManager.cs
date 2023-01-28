@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using ConnectToUrl;
 
-public static class CredentialManager {
+internal static class CredentialManager {
     internal const Int32 NO_ERROR = 0;
     internal const Int32 ERROR_CANCELLED = 1223;
     internal const Int32 ERROR_NO_SUCH_LOGON_SESSION = 1312;

@@ -11,7 +11,7 @@ namespace ConnectToUrl;
 /// <remarks>
 ///   See https://cplusplus.com/reference/cstdio/printf/
 /// </remarks>
-public class PrintfFormatSpecifier {
+internal class PrintfFormatSpecifier {
     public PrintfFormatSpecifier(String value, Char type, PrintfFlags flags, Int32? width, Boolean widthFromArgument, Int32? precision, Boolean precisionFromArgument, String? length) {
         Value = value;
         Type = type;
@@ -215,7 +215,7 @@ public class PrintfFormatSpecifier {
 ///   See https://cplusplus.com/reference/cstdio/printf/
 /// </remarks>
 [Flags]
-public enum PrintfFlags {
+internal enum PrintfFlags {
     None = 0,
 
     /// <summary>
