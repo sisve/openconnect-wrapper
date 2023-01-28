@@ -4,7 +4,13 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ConnectToUrl;
 
-// %[flags][width][.precision][length]type
+/// <summary>
+///   Holds information about a format specified used by printf. These are in
+///   the format `%[flags][width][.precision][length]type`.
+/// </summary>
+/// <remarks>
+///   See https://cplusplus.com/reference/cstdio/printf/
+/// </remarks>
 public class PrintfFormatSpecifier {
     public PrintfFormatSpecifier(String value, Char type, PrintfFlags flags, Int32? width, Boolean widthFromArgument, Int32? precision, Boolean precisionFromArgument, String? length) {
         Value = value;
@@ -202,35 +208,47 @@ public class PrintfFormatSpecifier {
     }
 }
 
+/// <summary>
+///   The flags of a printf format specifier.
+/// </summary>
+/// <remarks>
+///   See https://cplusplus.com/reference/cstdio/printf/
+/// </remarks>
 [Flags]
 public enum PrintfFlags {
     None = 0,
 
     /// <summary>
-    /// Left-justify within the given field width; Right justification is the default (see width sub-specifier).
+    ///   Left-justify within the given field width; Right justification is the
+    ///   default (see width sub-specifier).
     /// </summary>
     LeftJustify = 1,
 
     /// <summary>
-    /// Forces to preceed the result with a plus or minus sign (+ or -) even for positive numbers.
-    /// By default, only negative numbers are preceded with a - sign.
+    ///   Forces to preceed the result with a plus or minus sign (+ or -) even
+    ///   for positive numbers. By default, only negative numbers are preceded
+    ///   with a - sign.
     /// </summary>
     ForceSign = 2,
 
     /// <summary>
-    /// If no sign is going to be written, a blank space is inserted before the value.
+    ///   If no sign is going to be written, a blank space is inserted before
+    ///   the value.
     /// </summary>
     SpaceIfMissingSign = 4,
 
     /// <summary>
-    /// Used with o, x or X specifiers the value is preceeded with 0, 0x or 0X respectively for values different than zero.
-    /// Used with a, A, e, E, f, F, g or G it forces the written output to contain a decimal point even if no more digits follow.
-    /// By default, if no digits follow, no decimal point is written.
+    ///   Used with o, x or X specifiers the value is preceeded with 0, 0x or 0X
+    ///   respectively for values different than zero. Used with a, A, e, E, f,
+    ///   F, g or G it forces the written output to contain a decimal point even
+    ///   if no more digits follow. By default, if no digits follow, no decimal
+    ///   point is written.
     /// </summary>
     Alternate = 8,
 
     /// <summary>
-    /// Left-pads the number with zeroes (0) instead of spaces when padding is specified (see width sub-specifier).
+    ///   Left-pads the number with zeroes (0) instead of spaces when padding is
+    ///   specified (see width sub-specifier).
     /// </summary>
     ZeroPad = 16,
 }

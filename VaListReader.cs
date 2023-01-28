@@ -5,11 +5,31 @@ using System.Text.RegularExpressions;
 
 namespace ConnectToUrl;
 
-/**
- * Targets a _specific_ va_list instance and allows us to read arguments
- * from it. This class is impossible to reuse, it uses raw memory access
- * to find the exact signature of _one_ known caller.
- */
+/// <summary>
+///   Targets a _specific_ va_list instance and allows us to read arguments from
+///   it.
+///
+///   I've been unable to find any documentation on how the va_list is passed,
+///   and this implementation is based on guesses, inspected memory, more
+///   guesses, and lots of frustration.
+///
+///   Assuming the caller signature `void log(const char* format, ...)`, then
+///   the C# signature _could_ be `void log(string format, void* va_list)` where
+///   we get a pointer to the first entry on the list. Reading this entry would
+///   get us the first item, but we want to know where the pointer/parameter
+///   value itself is stored, so we need `new VaListReader(&amp;va_list)` to get
+///   an void**, a pointer to where the pointer to the value is.
+///
+///   It _seems_ that the first entry in the va_list is stored at the expected
+///   memory location. Any additional entries, however, are stored in another
+///   location. A debug compilation offsets the rest 140 bytes (18 * IntPtr.Size),
+///   while a release compilation offsets them at 112 bytes (14 * IntPtr.Size).
+///   It is not clear what these 140 / 112 bytes contains, or why the
+///   compilation settings would affact it.
+///
+///   This has been tested on Windows 10 64-bit, in both debug and release
+///   builds.
+/// </summary>
 internal unsafe class VaListReader : IPrintfValueProvider {
     private readonly IntPtr _firstPtr;
     private readonly IntPtr _restPtr;
@@ -23,6 +43,11 @@ internal unsafe class VaListReader : IPrintfValueProvider {
     public VaListReader(void** ptr) {
         _firstPtr = new IntPtr(ptr);
 
+        // The offset is 18 and 14 IntPtr.Size. We use 17 and 13 here to place
+        // the _restPtr just before the first entry (in reality, the second
+        // item in the va_list). We will move to the correct position once we
+        // read the first va_list item, and increase _offset, which places us
+        // one step further ahead than these values.
 #if DEBUG
         var offset = 17 * IntPtr.Size;
 #else

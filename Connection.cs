@@ -10,6 +10,11 @@ using static Winsock2;
 
 namespace ConnectToUrl;
 
+/// <summary>
+///   This class handles the interaction with the different openconnect_*
+///   native method calls. This includes creating and configuring the
+///   connection, and handle authentication. 
+/// </summary>
 internal unsafe class Connection {
     private const Int32 SUCCESS = 0;
     private const Int32 FAILURE = 1;
@@ -25,11 +30,13 @@ internal unsafe class Connection {
     private readonly ManualResetEventSlim _hasDisconnected = new ManualResetEventSlim();
     private readonly Thread _loopThread;
 
-    // We're holding on to the delegate here, to make sure they are never garbage collected.
+    // We're holding on to the delegates here, to make sure they are never
+    // garbage collected while the class is still alive.
     private readonly openconnect_validate_peer_cert_vfn? ValidatePeerDelegate;
     private readonly openconnect_write_new_config_vfn? WriteNewConfigDelegate;
     private readonly openconnect_process_auth_form_vfn? ProcessAuthFormDelegate;
     private readonly openconnect_progress_vfn? ProgressDelegate;
+    private readonly openconnect_setup_tun_vfn SetupTunDelegate;
 
     private openconnect_info* _vpninfo;
     private Int32 _cmd_fd;
@@ -44,6 +51,7 @@ internal unsafe class Connection {
         WriteNewConfigDelegate = null;
         ProcessAuthFormDelegate = ProcessAuthForm;
         ProgressDelegate = ReportProgress;
+        SetupTunDelegate = SetupTunHandler;
     }
 
     public String? Url { get; init; }
@@ -103,8 +111,12 @@ internal unsafe class Connection {
             return FAILURE;
         }
 
-        openconnect_set_setup_tun_handler(_vpninfo, SetupTunHandler);
-        openconnect_disable_ipv6(_vpninfo);
+        openconnect_set_setup_tun_handler(_vpninfo, SetupTunDelegate);
+
+        // Disable ipv6. This method always returns 0 before we're connected.
+        _ = openconnect_disable_ipv6(_vpninfo);
+        
+        // Enable perfect forward secrecy.
         openconnect_set_pfs(_vpninfo, 1);
 
         var parseUrlResult = openconnect_parse_url(_vpninfo, Url);
@@ -151,10 +163,10 @@ internal unsafe class Connection {
 
                 Console.WriteLine();
                 Console.Error.WriteLine("!!!");
-                Console.Error.WriteLine("!!! A common problem for this function to fail is when there's no available");
+                Console.Error.WriteLine("!!! A common cause for this function to fail is when there's no available");
                 Console.Error.WriteLine("!!! virtual ethernet adapter for TAP-Windows to use. Make sure that you have");
                 Console.Error.WriteLine("!!! enough, and read https://github.com/sisve/openconnect-wrapper/ for help");
-                Console.Error.WriteLine("!!! setting up additional adapters.");
+                Console.Error.WriteLine("!!! on setting up additional adapters.");
                 Console.Error.WriteLine("!!!");
                 Console.WriteLine();
 
@@ -174,7 +186,8 @@ internal unsafe class Connection {
         var cstp = Helper.AllocHGlobal<oc_vpn_option>();
         var dtls = Helper.AllocHGlobal<oc_vpn_option>();
 
-        openconnect_get_ip_info(vpninfo, &info, &cstp, &dtls);
+        // openconnect_get_ip_info always return 0
+        _ = openconnect_get_ip_info(vpninfo, &info, &cstp, &dtls);
 
         Console.WriteLine("#################################");
         Console.WriteLine("ADDR: " + Helper.PtrToStringAnsi(info->addr));
@@ -378,6 +391,12 @@ internal unsafe class Connection {
         return OC_FORM_RESULT_OK;
     }
 
+    /// <summary>
+    ///   The native delegate is variadic and passes us a va_list. Neither C#,
+    ///   nor the marshaller, supports va_list. We accept a pointer to
+    ///   _something_, and then let VaListReader do its magic to understand
+    ///   the content.
+    /// </summary>
     private void ReportProgress(void* privdata, Int32 level, Char* formatPtr, void* vaList) {
         var vaListReader = new VaListReader(&vaList);
         ReportProgress(privdata, level, formatPtr, vaListReader);
@@ -412,7 +431,6 @@ internal unsafe class Connection {
                     // The mainloop exited after an OC_CMD_PAUSE. This is
                     // used to pause and resume vpn connections. We do not
                     // support such functionality.
-                    // 
                     break;
 
                 case -EINTR: // Response to OC_CMD_CANCEL
@@ -558,13 +576,15 @@ internal unsafe class Connection {
 
         public void Fail() {
             if (_shouldConfirm) {
-                CredUIConfirmCredentialsW(_targetName, false);
+                // We do not care about the result.
+                _ = CredUIConfirmCredentialsW(_targetName, false);
             }
         }
 
         public void Success() {
             if (_shouldConfirm) {
-                CredUIConfirmCredentialsW(_targetName, true);
+                // We do not care about the result.
+                _ = CredUIConfirmCredentialsW(_targetName, true);
             }
         }
     }

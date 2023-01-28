@@ -5,8 +5,17 @@ using CommandLine;
 
 namespace ConnectToUrl;
 
+/// <summary>
+///   Contains all parsing of command line arguments into a structured format.
+/// </summary>
+/// <remarks>
+///   CommandLineParser uses reflection to set the properties of this class.
+///   This implies that static code analysis cannot see the usage of the
+///   property settings, and application trimming removes them. This is handled
+///   by the TrimRoots.xml file, where we specify that we want to keep all
+///   members of this class. 
+/// </remarks>
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
-[SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
 internal class CommandLineArgs {
     [Value(0, MetaName = "Url", Required = true, HelpText = "Url to vpn")]
     public String Url { get; set; } = String.Empty;
@@ -57,10 +66,12 @@ internal class CommandLineArgs {
 
         // Handle backward compatibility options
         if (result is { Verbose: true, LogLevel: < LogLevelEnum.Debug }) {
+            Console.Error.WriteLine("CommandLineArgs: Called with -Verbose, change to '--log-level debug'");
             result.LogLevel = LogLevelEnum.Debug;
         }
 
         if (result is { DumpHttpTraffic: true, LogLevel: < LogLevelEnum.Trace }) {
+            Console.Error.WriteLine("CommandLineArgs: Called with -DumpHttpTraffic, change to '--log-level trace'");
             result.LogLevel = LogLevelEnum.Trace;
         }
 
@@ -72,7 +83,9 @@ internal class CommandLineArgs {
         Error = OpenConnect.PRG_ERR,
 
         // "Warning" is an expected log level, but does not exist within OpenConnect.
+        [SuppressMessage("Design", "CA1069:Enums values should not be duplicated")]
         Warning = OpenConnect.PRG_ERR,
+
         Info = OpenConnect.PRG_INFO,
         Debug = OpenConnect.PRG_DEBUG,
         Trace = OpenConnect.PRG_TRACE,

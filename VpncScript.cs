@@ -3,6 +3,12 @@ using System.IO;
 
 namespace ConnectToUrl;
 
+/// <summary>
+///   A helper class that writes the vpnc script to disk, and does its best to
+///   remove it once the object goes out of scope (read: disposed). This class
+///   will also try and cleanup previous executions that may have crashed and
+///   left an orphan vpnc script file.
+/// </summary>
 internal class VpnScript : DisposableAction {
     public String ScriptPath { get; }
 

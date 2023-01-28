@@ -5,7 +5,13 @@ using System.Text;
 
 namespace ConnectToUrl;
 
-// Ref: https://cplusplus.com/reference/cstdio/printf/
+/// <summary>
+///   A somewhat limited printf formatter. The goal is to support the formats
+///   used by the openconnect library. Anything else is out-of-scope.
+/// </summary>
+/// <remarks>
+///   See https://cplusplus.com/reference/cstdio/printf/
+/// </remarks>
 public static class PrintfFormatter {
     public static String Format(String format, IPrintfValueProvider reader) {
         if (!format.Contains('%')) {

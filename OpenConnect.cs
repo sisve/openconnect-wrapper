@@ -31,15 +31,32 @@ internal abstract unsafe class OpenConnect {
     public const Int32 PRG_DEBUG = 2;
     public const Int32 PRG_TRACE = 3;
 
+    /// <summary>
+    ///   CANCEL closes network connections, logs off the session (cookie)
+    ///   and shuts down the tun device.
+    /// </summary>
     [NotNull]
     public static readonly Char* OC_CMD_CANCEL = Helper.StringToHGlobalAnsi("x");
 
+    /// <summary>
+    ///   PAUSE closes network connections and returns. The caller is expected
+    ///   to call openconnect_mainloop() again soon
+    /// </summary>
     [NotNull]
     public static readonly Char* OC_CMD_PAUSE = Helper.StringToHGlobalAnsi("p");
 
+    /// <summary>
+    ///   DETACH closes network connections and shuts down the tun device.
+    ///   It is not legal to call openconnect_mainloop() again after this,
+    ///   but a new instance of openconnect can be started using the same
+    ///   cookie.
+    /// </summary>
     [NotNull]
     public static readonly Char* OC_CMD_DETACH = Helper.StringToHGlobalAnsi("d");
 
+    /// <summary>
+    ///   STATS calls the stats_handler.
+    /// </summary>
     [NotNull]
     public static readonly Char* OC_CMD_STATS = Helper.StringToHGlobalAnsi("s");
 
@@ -167,17 +184,24 @@ internal abstract unsafe class OpenConnect {
 
     public delegate Int32 openconnect_validate_peer_cert_vfn(
         void* privdata,
+
+        [OriginalType("const char*")]
         Char* reason
     );
 
     public delegate Int32 openconnect_write_new_config_vfn(
         void* privdata,
+
+        [OriginalType("const char*")]
         Char* buf,
+
         Int32 buflen
     );
 
     public delegate Int32 openconnect_process_auth_form_vfn(
         void* privdata,
+
+        [OriginalType("struct oc_auth_form*")]
         oc_auth_form* form
     );
 
@@ -295,7 +319,6 @@ internal abstract unsafe class OpenConnect {
 
         [OriginalType("const char*")]
         [MarshalAs(UnmanagedType.LPStr)]
-
         String? ifname
     );
 
