@@ -198,19 +198,19 @@ internal unsafe class Connection {
         Console.WriteLine("DNS3: " + Helper.PtrToStringAnsi(info->dns3));
 
         var include = info->split_includes;
-        while (!Helper.IsNull(include)) {
+        while (include != null) {
             Console.WriteLine("INCLUDE: " + Helper.PtrToStringAnsi(include->route));
             include = include->next;
         }
 
         var opt = cstp;
-        while (!Helper.IsNull(opt)) {
+        while (opt != null) {
             Console.WriteLine("CSTP: " + Helper.PtrToStringAnsi(opt->option) + " = " + Helper.PtrToStringAnsi(opt->value));
             opt = opt->next;
         }
 
         opt = dtls;
-        while (!Helper.IsNull(opt)) {
+        while (opt != null) {
             Console.WriteLine("DTLS: " + Helper.PtrToStringAnsi(cstp->option) + " = " + Helper.PtrToStringAnsi(cstp->value));
             opt = opt->next;
         }
@@ -288,11 +288,11 @@ internal unsafe class Connection {
 
         // Build list of field names
         var ocField = form->opts;
-        if (!Helper.IsNull(ocField)) {
+        if (ocField != null) {
             BoxContent($"Fields:");
         }
 
-        while (!Helper.IsNull(ocField)) {
+        while (ocField != null) {
             var fieldName = Helper.PtrToStringAnsi(ocField->name);
             var fieldLabel = Helper.PtrToStringAnsi(ocField->label);
             var fieldValue = Helper.PtrToStringAnsi(ocField->_value);
@@ -375,7 +375,7 @@ internal unsafe class Connection {
         }
 
         ocField = form->opts;
-        while (!Helper.IsNull(ocField)) {
+        while (ocField != null) {
             var fieldName = Helper.PtrToStringAnsi(ocField->name);
             var value = newValues[fieldName!];
             openconnect_set_option_value(ocField, value);

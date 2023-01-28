@@ -15,16 +15,12 @@ internal static class Helper {
         Marshal.FreeHGlobal(new IntPtr(ptr));
     }
 
-    public static unsafe Boolean IsNull(void* ptr) {
-        return new IntPtr(ptr) == IntPtr.Zero;
-    }
-
     public static Int16 MakeWord(Byte low, Byte high) {
         return (Int16)(high << 8 | low);
     }
 
     public static unsafe String? PtrToStringAnsi(Char* ch) {
-        if (IsNull(ch)) {
+        if (ch == null) {
             return null;
         }
 
