@@ -39,7 +39,7 @@ internal unsafe class Connection {
     private readonly openconnect_setup_tun_vfn SetupTunDelegate;
 
     private openconnect_info* _vpninfo;
-    private Int32 _cmd_fd;
+    private Int32 _cmd_fd = INVALID_SOCKET;
 
     private Boolean _isFirstAuthAttempt = true;
     private Credentials? _currentCredentials;
