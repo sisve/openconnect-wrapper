@@ -182,9 +182,9 @@ internal unsafe class Connection {
     private static void SetupTunHandler(void* _privdata) {
         var vpninfo = (openconnect_info*)_privdata;
 
-        var info = Helper.AllocHGlobal<oc_ip_info>();
-        var cstp = Helper.AllocHGlobal<oc_vpn_option>();
-        var dtls = Helper.AllocHGlobal<oc_vpn_option>();
+        oc_ip_info* info = null;
+        oc_vpn_option* cstp = null;
+        oc_vpn_option* dtls = null;
 
         // openconnect_get_ip_info always return 0
         _ = openconnect_get_ip_info(vpninfo, &info, &cstp, &dtls);
@@ -217,10 +217,6 @@ internal unsafe class Connection {
 
         Console.WriteLine("SetupTun: done!");
         Console.WriteLine("#################################");
-
-        Helper.FreeHGlobal(info);
-        Helper.FreeHGlobal(cstp);
-        Helper.FreeHGlobal(dtls);
     }
 
     private record AuthFormField(String Name);
