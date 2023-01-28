@@ -28,28 +28,16 @@ internal static class Program {
 
         Console.WriteLine($"IntPtr.Size={IntPtr.Size}");
 
-        using (ConsoleQuickEdit.Disable()) {
+        using (ConsoleQuickEdit.Disable())
+        using (var vpncScript = VpnScript.Scoped()) {
             // Make [DllImport] load libopenconnect from dllDirectory.
             Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH") + ";" + dllDirectory);
 
-            var scriptPath = Path.Combine(AppContext.BaseDirectory, "vpnc-script-win.js");
-            if (File.Exists(scriptPath)) {
-                Console.WriteLine($"Using vpnc script at {scriptPath}");
-            } else {
-                var scriptContent = GetVpncScriptContent();
-                if (scriptContent == null) {
-                    Console.Error.WriteLine($"Failed to initialize vpnc script at {scriptPath}");
-                    scriptPath = null;
-                } else {
-                    Console.WriteLine($"Initializing vpnc script at {scriptPath}");
-                    File.WriteAllText(scriptPath, GetVpncScriptContent());
-                }
-            }
-
+            Console.WriteLine($"Using vpnc script at {vpncScript.ScriptPath}");
             var connection = new Connection {
                 Url = parsedArgs.Url,
                 MinLoggingLevel = (Int32)parsedArgs.LogLevel,
-                ScriptPath = scriptPath,
+                ScriptPath = vpncScript.ScriptPath,
                 SecondaryPassword = parsedArgs.SecondaryPassword,
             };
 
@@ -83,17 +71,5 @@ internal static class Program {
         }
 
         return exitCode;
-    }
-
-    private static String? GetVpncScriptContent() {
-        var assembly = typeof(Program).Assembly;
-
-        using var stream = assembly.GetManifestResourceStream($"{assembly.GetName().Name}.vpnc-script-win.js");
-        if (stream == null) {
-            return null;
-        }
-
-        using var streamReader = new StreamReader(stream);
-        return streamReader.ReadToEnd();
     }
 }
