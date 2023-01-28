@@ -228,25 +228,46 @@ internal unsafe class Connection {
         var formAuthId = Helper.PtrToStringAnsi(form->auth_id);
         var formMethod = Helper.PtrToStringAnsi(form->method);
 
-        Console.WriteLine("####################### AUTHENTICATION #######################");
+        void BoxContent(String content = "", Boolean newLine = true) {
+            if (newLine) {
+                Console.WriteLine("    ##  " + content);
+            } else {
+                Console.Write("    ##  " + content);
+            }
+        }
+
+        void BoxVerticalMargin() {
+            Console.WriteLine();
+            Console.WriteLine();
+        }
+
+        void BoxBorderBottom() {
+            Console.WriteLine("    ####################################################################");
+            BoxVerticalMargin();
+        }
+
+        BoxVerticalMargin();
+        Console.WriteLine("    ########################## AUTHENTICATION ##########################");
+        BoxContent();
         if (!String.IsNullOrWhiteSpace(formBanner)) {
-            Console.WriteLine(formBanner);
+            BoxContent(formBanner);
+            BoxContent();
         }
 
         if (formMethod != "POST") {
-            Console.WriteLine($"DEBUG: formMethod={F(formMethod)}");
+            BoxContent($"DEBUG: formMethod={F(formMethod)}");
         }
 
         if (formAction != "/") {
-            Console.WriteLine($"DEBUG: formAction={F(formAction)}");
+            BoxContent($"DEBUG: formAction={F(formAction)}");
         }
 
         if (formAuthId != "main") {
-            Console.WriteLine($"DEBUG: formAuthId={F(formAuthId)}");
+            BoxContent($"DEBUG: formAuthId={F(formAuthId)}");
         }
 
         if (formError != null) {
-            Console.WriteLine($"Error: {F(formError)}");
+            BoxContent($"Error: {F(formError)}");
         }
 
         var formFields = new Dictionary<String, AuthFormField>();
@@ -255,7 +276,7 @@ internal unsafe class Connection {
         // Build list of field names
         var ocField = form->opts;
         if (!Helper.IsNull(ocField)) {
-            Console.WriteLine("Fields:");
+            BoxContent($"Fields:");
         }
 
         while (!Helper.IsNull(ocField)) {
@@ -263,25 +284,25 @@ internal unsafe class Connection {
             var fieldLabel = Helper.PtrToStringAnsi(ocField->label);
             var fieldValue = Helper.PtrToStringAnsi(ocField->_value);
 
-            Console.WriteLine($" * Name: {F(fieldName)} ({ocField->type})");
-            Console.WriteLine($"   Label: {F(fieldLabel)}");
+            BoxContent($" * Name: {F(fieldName)} ({ocField->type})");
+            BoxContent($"   Label: {F(fieldLabel)}");
 
             if (fieldValue != null) {
-                Console.WriteLine($"   Value: {F(fieldValue)}");
+                BoxContent($"   Value: {F(fieldValue)}");
             }
 
             if (ocField->flags != OC_FORM_OPT_FLAGS.NONE) {
-                Console.WriteLine($"   Flags: {ocField->flags}");
+                BoxContent($"   Flags: {ocField->flags}");
             }
 
-            Console.WriteLine();
+            BoxContent();
 
             formFields[fieldName!] = new AuthFormField(fieldName!);
             ocField = ocField->next;
         }
 
         if (formFields.ContainsKey("username") && formFields.ContainsKey("password")) {
-            Console.WriteLine("Auth: Detected both username and password field.");
+            BoxContent("Auth: Detected both username and password field.");
 
             var messageText = String.IsNullOrWhiteSpace(formMessage)
                 ? $"Enter credentials for the VPN connection to {Url}"
@@ -290,20 +311,20 @@ internal unsafe class Connection {
             // We've been asked about credentials. If we already have credentials,
             // assume those have been faulty.
             if (_currentCredentials != null) {
-                Console.WriteLine("Auth: Marking previous credentials as incorrect.");
+                BoxContent("Auth: Marking previous credentials as incorrect.");
                 _currentCredentials.Fail();
 
-                Console.WriteLine("Auth: Showing user interface to ask for credentials...");
+                BoxContent("Auth: Showing user interface to ask for credentials...");
                 var ERROR_NETWORK_ACCESS_DENIED = 65;
                 _currentCredentials = AskForCredentials(messageText, ERROR_NETWORK_ACCESS_DENIED, true);
             } else {
-                Console.WriteLine("Auth: Asking user for potentially stored credentials...");
+                BoxContent("Auth: Asking user for potentially stored credentials...");
                 _currentCredentials = AskForCredentials(messageText);
             }
 
             if (_currentCredentials == null) {
                 // The user did not provide any credentials.
-                Console.Error.WriteLine("Auth: No credentials given, cancelling login");
+                BoxContent("Auth: No credentials given, cancelling login");
                 return OC_FORM_RESULT_ERR;
             }
 
@@ -312,7 +333,7 @@ internal unsafe class Connection {
         }
 
         if (_isFirstAuthAttempt && formFields.ContainsKey("secondary_password") && SecondaryPassword != null) {
-            Console.WriteLine("Auth: Detected 'secondary_password' field, auto-filling on first login attempt.");
+            BoxContent("Auth: Detected 'secondary_password' field, auto-filling on first login attempt.");
             newValues["secondary_password"] = SecondaryPassword;
         }
 
@@ -321,20 +342,23 @@ internal unsafe class Connection {
             .ToArray();
 
         if (missingFormFields.Any()) {
-            Console.WriteLine();
-            Console.WriteLine("Press CTRL-Z to cancel the input and the connection attempt.");
+            BoxContent();
+            BoxContent("Press CTRL-Z to cancel the input and the connection attempt.");
+            BoxContent();
             foreach (var formField in missingFormFields) {
-                Console.Write($" * Enter value for field '{formField.Name}': ");
+                BoxContent($" * Enter value for field '{formField.Name}': ", newLine: false);
 
                 var input = Console.ReadLine();
                 if (String.IsNullOrWhiteSpace(input)) {
+                    BoxContent();
+                    BoxBorderBottom();
                     return OC_FORM_RESULT_ERR;
                 }
 
                 newValues[formField.Name] = input;
             }
 
-            Console.WriteLine();
+            BoxContent();
         }
 
         ocField = form->opts;
@@ -346,7 +370,10 @@ internal unsafe class Connection {
             ocField = ocField->next;
         }
 
-        Console.WriteLine("Auth: Sending credentials to server.");
+        BoxContent("Auth: Sending credentials to server.");
+        BoxContent();
+        BoxBorderBottom();
+
         _isFirstAuthAttempt = false;
         return OC_FORM_RESULT_OK;
     }
