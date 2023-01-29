@@ -76,7 +76,7 @@ internal unsafe class Connection {
         _state = Helper.AllocHGlobal<State>();
         _state->minLoggingLevel = MinLoggingLevel;
 
-        openconnect_info* vpninfo;
+        openconnect_info* vpninfo = null;
         try {
             vpninfo = openconnect_vpninfo_new(
                 "Open AnyConnect VPN Agent",
@@ -87,8 +87,6 @@ internal unsafe class Connection {
                 _state
             );
         } catch (BadImageFormatException ex) {
-            Helper.FreeHGlobal(ref _state);
-
             Console.Error.WriteLine(ex.Message);
             Console.WriteLine();
             Console.Error.WriteLine("!!!");
@@ -97,8 +95,7 @@ internal unsafe class Connection {
             Console.Error.WriteLine("!!! version of OpenConnect.");
             Console.Error.WriteLine("!!!");
             Console.WriteLine();
-
-            return FAILURE;
+            goto failure;
         }
 
         _state->vpninfo = vpninfo;
@@ -108,10 +105,7 @@ internal unsafe class Connection {
             var lastError = Marshal.GetLastWin32Error();
             Console.Error.WriteLine($"openconnect_setup_cmd_pipe returned error {lastError} when setting up cmd_fd.");
             Console.Error.WriteLine("Check https://learn.microsoft.com/en-us/windows/win32/winsock/windows-sockets-error-codes-2");
-
-            openconnect_vpninfo_free(vpninfo);
-            Helper.FreeHGlobal(ref _state);
-            return FAILURE;
+            goto failure;
         }
 
         var mode = 0u; // blocking
@@ -120,19 +114,13 @@ internal unsafe class Connection {
         if (ioctlResult != 0) {
             Console.Error.WriteLine($"ioctlsocket returned error {ioctlResult}");
             Console.Error.WriteLine("Check https://learn.microsoft.com/en-us/windows/win32/api/winsock/nf-winsock-ioctlsocket");
-
-            openconnect_vpninfo_free(vpninfo);
-            Helper.FreeHGlobal(ref _state);
-            return FAILURE;
+            goto failure;
         }
 
         var setProtoResult = openconnect_set_protocol(vpninfo, "anyconnect");
         if (setProtoResult != 0) {
             Console.Error.WriteLine($"openconnect_set_protocol returned error {setProtoResult}");
-
-            openconnect_vpninfo_free(vpninfo);
-            Helper.FreeHGlobal(ref _state);
-            return FAILURE;
+            goto failure;
         }
 
         openconnect_set_setup_tun_handler(vpninfo, SetupTunDelegate);
@@ -146,28 +134,19 @@ internal unsafe class Connection {
         var parseUrlResult = openconnect_parse_url(vpninfo, Url);
         if (parseUrlResult != 0) {
             Console.Error.WriteLine($"openconnect_parse_url returned error {parseUrlResult}");
-
-            openconnect_vpninfo_free(vpninfo);
-            Helper.FreeHGlobal(ref _state);
-            return FAILURE;
+            goto failure;
         }
 
         var setReportedOsResult = openconnect_set_reported_os(vpninfo, "win");
         if (setReportedOsResult != 0) {
             Console.Error.WriteLine($"openconnect_set_reported_os returned error {setReportedOsResult}");
-
-            openconnect_vpninfo_free(vpninfo);
-            Helper.FreeHGlobal(ref _state);
-            return FAILURE;
+            goto failure;
         }
 
         var optainCookieResult = openconnect_obtain_cookie(vpninfo);
         if (optainCookieResult != 0) {
             Console.Error.WriteLine($"openconnect_obtain_cookie returned error {optainCookieResult}");
-
-            openconnect_vpninfo_free(vpninfo);
-            Helper.FreeHGlobal(ref _state);
-            return FAILURE;
+            goto failure;
         }
 
         // Mark current credentials as working.
@@ -176,20 +155,13 @@ internal unsafe class Connection {
         var makeCstpConnectionResult = openconnect_make_cstp_connection(vpninfo);
         if (makeCstpConnectionResult != 0) {
             Console.Error.WriteLine($"openconnect_make_cstp_connection returned error {makeCstpConnectionResult}");
-
-            openconnect_vpninfo_free(vpninfo);
-            Helper.FreeHGlobal(ref _state);
-            return FAILURE;
+            goto failure;
         }
 
         if (ScriptPath != null) {
             var setupTunDeviceResult = openconnect_setup_tun_device(vpninfo, ScriptPath, null);
             if (setupTunDeviceResult != 0) {
                 Console.Error.WriteLine($"openconnect_setup_tun_device returned error {setupTunDeviceResult}");
-
-                openconnect_vpninfo_free(vpninfo);
-                Helper.FreeHGlobal(ref _state);
-
                 Console.WriteLine();
                 Console.Error.WriteLine("!!!");
                 Console.Error.WriteLine("!!! A common cause for this function to fail is when there's no available");
@@ -199,13 +171,20 @@ internal unsafe class Connection {
                 Console.Error.WriteLine("!!!");
                 Console.WriteLine();
 
-                return FAILURE;
+                goto failure;
             }
         }
 
         _loopThread.Start();
-
         return SUCCESS;
+
+        failure:
+        if (vpninfo != null) {
+            openconnect_vpninfo_free(vpninfo);
+        }
+
+        Helper.FreeHGlobal(ref _state);
+        return FAILURE;
     }
 
     private static void SetupTunHandler(void* _privdata) {
