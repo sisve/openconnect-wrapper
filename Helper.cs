@@ -11,8 +11,9 @@ internal static class Helper {
         return (T*)ptr;
     }
 
-    public static unsafe void FreeHGlobal(void* ptr) {
+    public static unsafe void FreeHGlobal<T>(ref T* ptr) where T : unmanaged {
         Marshal.FreeHGlobal(new IntPtr(ptr));
+        ptr = null;
     }
 
     public static Int16 MakeWord(Byte low, Byte high) {

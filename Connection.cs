@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -32,13 +33,10 @@ internal unsafe class Connection {
 
     // We're holding on to the delegates here, to make sure they are never
     // garbage collected while the class is still alive.
-    private readonly openconnect_validate_peer_cert_vfn? ValidatePeerDelegate;
-    private readonly openconnect_write_new_config_vfn? WriteNewConfigDelegate;
     private readonly openconnect_process_auth_form_vfn? ProcessAuthFormDelegate;
-    private readonly openconnect_progress_vfn? ProgressDelegate;
     private readonly openconnect_setup_tun_vfn SetupTunDelegate;
 
-    private openconnect_info* _vpninfo;
+    private State* _state;
     private Int32 _cmd_fd = INVALID_SOCKET;
 
     private Boolean _isFirstAuthAttempt = true;
@@ -47,10 +45,7 @@ internal unsafe class Connection {
     internal Connection() {
         _loopThread = new Thread(MainLoop);
 
-        ValidatePeerDelegate = null;
-        WriteNewConfigDelegate = null;
         ProcessAuthFormDelegate = ProcessAuthForm;
-        ProgressDelegate = ReportProgress;
         SetupTunDelegate = SetupTunHandler;
     }
 
@@ -58,6 +53,11 @@ internal unsafe class Connection {
     public Int32 MinLoggingLevel { get; init; }
     public String? ScriptPath { get; init; }
     public String? SecondaryPassword { get; init; }
+
+    private struct State {
+        public Int32 minLoggingLevel;
+        public openconnect_info* vpninfo;
+    }
 
     internal Int32 Connect() {
         if (Url == null) {
@@ -73,22 +73,44 @@ internal unsafe class Connection {
             return FAILURE;
         }
 
-        _vpninfo = openconnect_vpninfo_new(
-            "Open AnyConnect VPN Agent",
-            ValidatePeerDelegate,
-            WriteNewConfigDelegate,
-            ProcessAuthFormDelegate,
-            ProgressDelegate,
-            null
-        );
+        _state = Helper.AllocHGlobal<State>();
+        _state->minLoggingLevel = MinLoggingLevel;
 
-        _cmd_fd = openconnect_setup_cmd_pipe(_vpninfo);
+        openconnect_info* vpninfo;
+        try {
+            vpninfo = openconnect_vpninfo_new(
+                "Open AnyConnect VPN Agent",
+                null,
+                null,
+                ProcessAuthFormDelegate,
+                &ProgressCallback,
+                _state
+            );
+        } catch (BadImageFormatException ex) {
+            Helper.FreeHGlobal(ref _state);
+
+            Console.Error.WriteLine(ex.Message);
+            Console.WriteLine();
+            Console.Error.WriteLine("!!!");
+            Console.Error.WriteLine("!!! An error occurred when talking to OpenConnect. This error happens if you've");
+            Console.Error.WriteLine("!!! installed the 32bit OpenConnect release. Verify that you installed the 64bit");
+            Console.Error.WriteLine("!!! version of OpenConnect.");
+            Console.Error.WriteLine("!!!");
+            Console.WriteLine();
+
+            return FAILURE;
+        }
+
+        _state->vpninfo = vpninfo;
+
+        _cmd_fd = openconnect_setup_cmd_pipe(vpninfo);
         if (_cmd_fd == INVALID_SOCKET) {
             var lastError = Marshal.GetLastWin32Error();
             Console.Error.WriteLine($"openconnect_setup_cmd_pipe returned error {lastError} when setting up cmd_fd.");
             Console.Error.WriteLine("Check https://learn.microsoft.com/en-us/windows/win32/winsock/windows-sockets-error-codes-2");
 
-            openconnect_vpninfo_free(_vpninfo);
+            openconnect_vpninfo_free(vpninfo);
+            Helper.FreeHGlobal(ref _state);
             return FAILURE;
         }
 
@@ -99,67 +121,74 @@ internal unsafe class Connection {
             Console.Error.WriteLine($"ioctlsocket returned error {ioctlResult}");
             Console.Error.WriteLine("Check https://learn.microsoft.com/en-us/windows/win32/api/winsock/nf-winsock-ioctlsocket");
 
-            openconnect_vpninfo_free(_vpninfo);
+            openconnect_vpninfo_free(vpninfo);
+            Helper.FreeHGlobal(ref _state);
             return FAILURE;
         }
 
-        var setProtoResult = openconnect_set_protocol(_vpninfo, "anyconnect");
+        var setProtoResult = openconnect_set_protocol(vpninfo, "anyconnect");
         if (setProtoResult != 0) {
             Console.Error.WriteLine($"openconnect_set_protocol returned error {setProtoResult}");
 
-            openconnect_vpninfo_free(_vpninfo);
+            openconnect_vpninfo_free(vpninfo);
+            Helper.FreeHGlobal(ref _state);
             return FAILURE;
         }
 
-        openconnect_set_setup_tun_handler(_vpninfo, SetupTunDelegate);
+        openconnect_set_setup_tun_handler(vpninfo, SetupTunDelegate);
 
         // Disable ipv6. This method always returns 0 before we're connected.
-        _ = openconnect_disable_ipv6(_vpninfo);
-        
-        // Enable perfect forward secrecy.
-        openconnect_set_pfs(_vpninfo, 1);
+        _ = openconnect_disable_ipv6(vpninfo);
 
-        var parseUrlResult = openconnect_parse_url(_vpninfo, Url);
+        // Enable perfect forward secrecy.
+        openconnect_set_pfs(vpninfo, 1);
+
+        var parseUrlResult = openconnect_parse_url(vpninfo, Url);
         if (parseUrlResult != 0) {
             Console.Error.WriteLine($"openconnect_parse_url returned error {parseUrlResult}");
 
-            openconnect_vpninfo_free(_vpninfo);
+            openconnect_vpninfo_free(vpninfo);
+            Helper.FreeHGlobal(ref _state);
             return FAILURE;
         }
 
-        var setReportedOsResult = openconnect_set_reported_os(_vpninfo, "win");
+        var setReportedOsResult = openconnect_set_reported_os(vpninfo, "win");
         if (setReportedOsResult != 0) {
             Console.Error.WriteLine($"openconnect_set_reported_os returned error {setReportedOsResult}");
 
-            openconnect_vpninfo_free(_vpninfo);
+            openconnect_vpninfo_free(vpninfo);
+            Helper.FreeHGlobal(ref _state);
             return FAILURE;
         }
 
-        var optainCookieResult = openconnect_obtain_cookie(_vpninfo);
+        var optainCookieResult = openconnect_obtain_cookie(vpninfo);
         if (optainCookieResult != 0) {
             Console.Error.WriteLine($"openconnect_obtain_cookie returned error {optainCookieResult}");
 
-            openconnect_vpninfo_free(_vpninfo);
+            openconnect_vpninfo_free(vpninfo);
+            Helper.FreeHGlobal(ref _state);
             return FAILURE;
         }
 
         // Mark current credentials as working.
         _currentCredentials?.Success();
 
-        var makeCstpConnectionResult = openconnect_make_cstp_connection(_vpninfo);
+        var makeCstpConnectionResult = openconnect_make_cstp_connection(vpninfo);
         if (makeCstpConnectionResult != 0) {
             Console.Error.WriteLine($"openconnect_make_cstp_connection returned error {makeCstpConnectionResult}");
 
-            openconnect_vpninfo_free(_vpninfo);
+            openconnect_vpninfo_free(vpninfo);
+            Helper.FreeHGlobal(ref _state);
             return FAILURE;
         }
 
         if (ScriptPath != null) {
-            var setupTunDeviceResult = openconnect_setup_tun_device(_vpninfo, ScriptPath, null);
+            var setupTunDeviceResult = openconnect_setup_tun_device(vpninfo, ScriptPath, null);
             if (setupTunDeviceResult != 0) {
                 Console.Error.WriteLine($"openconnect_setup_tun_device returned error {setupTunDeviceResult}");
 
-                openconnect_vpninfo_free(_vpninfo);
+                openconnect_vpninfo_free(vpninfo);
+                Helper.FreeHGlobal(ref _state);
 
                 Console.WriteLine();
                 Console.Error.WriteLine("!!!");
@@ -180,7 +209,8 @@ internal unsafe class Connection {
     }
 
     private static void SetupTunHandler(void* _privdata) {
-        var vpninfo = (openconnect_info*)_privdata;
+        var privdata = (State*)_privdata;
+        var vpninfo = privdata->vpninfo;
 
         oc_ip_info* info = null;
         oc_vpn_option* cstp = null;
@@ -221,7 +251,7 @@ internal unsafe class Connection {
 
     private record AuthFormField(String Name);
 
-    private Int32 ProcessAuthForm(void* privdata, oc_auth_form* form) {
+    private Int32 ProcessAuthForm(void* _privdata, oc_auth_form* form) {
         String F(String? input) {
             return input switch {
                 null => "<null>",
@@ -393,16 +423,17 @@ internal unsafe class Connection {
     ///   _something_, and then let VaListReader do its magic to understand
     ///   the content.
     /// </summary>
-    private void ReportProgress(void* privdata, Int32 level, Char* formatPtr, void* vaList) {
+    [UnmanagedCallersOnly(CallConvs = new[] {
+        typeof(CallConvCdecl)
+    })]
+    private static void ProgressCallback(void* _privdata, Int32 level, Char* formatPtr, void* vaList) {
+        var privdata = (State*)_privdata;
         var vaListReader = new VaListReader(&vaList);
-        ReportProgress(privdata, level, formatPtr, vaListReader);
-    }
 
-    private void ReportProgress(void* privdata, Int32 level, Char* formatPtr, VaListReader vaListReader) {
         // Unclear naming; the numeric values are lower for severe log levels
         // Choosing PRG_INFO (1) means we should discard PRG_DEBUG (2) and
         // PRG_TRACE (3).
-        if (MinLoggingLevel < level) {
+        if (privdata->minLoggingLevel < level) {
             return;
         }
 
@@ -421,7 +452,7 @@ internal unsafe class Connection {
 
     private void MainLoop() {
         using (ConsoleTitle.Change($"VPN: {Url}")) {
-            var mainloopResult = openconnect_mainloop(_vpninfo!, 30, RECONNECT_INTERVAL_MIN);
+            var mainloopResult = openconnect_mainloop(_state->vpninfo, 30, RECONNECT_INTERVAL_MIN);
             switch (mainloopResult) {
                 case 0:
                     // The mainloop exited after an OC_CMD_PAUSE. This is
@@ -446,8 +477,15 @@ internal unsafe class Connection {
             // Free up resources
             _cmd_fd = INVALID_SOCKET;
 
-            openconnect_vpninfo_free(_vpninfo!);
-            _vpninfo = null;
+            if (_state->vpninfo != null) {
+                openconnect_vpninfo_free(_state->vpninfo);
+                _state->vpninfo = null;
+            }
+
+            if (_state != null) {
+                Helper.FreeHGlobal(ref _state);
+                _state = null;
+            }
 
             // Set _hasDisconnected so that anyone using WaitForDisconnect
             // knows that we're not longer connected.

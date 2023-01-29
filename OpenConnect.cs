@@ -205,18 +205,6 @@ internal abstract unsafe class OpenConnect {
         oc_auth_form* form
     );
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void openconnect_progress_vfn(
-        void* privdata,
-        Int32 level,
-
-        [OriginalType("const char*")]
-        Char* fmt,
-
-        [OriginalType("...")]
-        void* args
-    );
-
     public delegate void openconnect_setup_tun_vfn(
         void* privdata
     );
@@ -339,7 +327,10 @@ internal abstract unsafe class OpenConnect {
         openconnect_validate_peer_cert_vfn? param1,
         openconnect_write_new_config_vfn? param2,
         openconnect_process_auth_form_vfn? param3,
-        openconnect_progress_vfn? param4,
+
+        [OriginalType("void (void *privdata, int level, const char *fmt, ...)")]
+        delegate* unmanaged[Cdecl] <void*, Int32, Char*, void*, void> param4,
+
         void* privdata
     );
 
