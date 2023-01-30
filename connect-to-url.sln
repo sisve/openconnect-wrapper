@@ -1,6 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "connect-to-url", "connect-to-url.csproj", "{93610970-C259-4B0A-9A46-4C9FBA7F3383}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "connect-to-url", "src\connect-to-url.csproj", "{93610970-C259-4B0A-9A46-4C9FBA7F3383}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "root", "root", "{B9468DB5-7687-49D7-B786-16434A00DA61}"
+	ProjectSection(SolutionItems) = preProject
+		readme.md = readme.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

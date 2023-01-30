@@ -1,5 +1,5 @@
 ﻿/.idea/
-/bin/
-/obj/
+/src/bin/
+/src/obj/
 
 /*.user
