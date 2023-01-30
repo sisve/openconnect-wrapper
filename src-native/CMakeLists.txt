@@ -4,3 +4,7 @@ project(native)
 if (WIN32)
     add_library(native.x64 SHARED native.c)
 endif (WIN32)
+
+if (UNIX)
+    add_library(native.x64 SHARED native.c)
+endif (UNIX)

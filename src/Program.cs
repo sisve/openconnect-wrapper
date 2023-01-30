@@ -21,6 +21,8 @@ internal static class Program {
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
             /* allow */
+        } else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+            /* allow */
         } else {
             Console.WriteLine("This application does not support your operating system.");
             Console.WriteLine($"RuntimeInformation.RuntimeIdentifier='{RuntimeInformation.RuntimeIdentifier}'");

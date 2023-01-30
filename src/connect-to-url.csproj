@@ -14,7 +14,7 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
         <!-- Publish a self-contained executable -->
-        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+        <RuntimeIdentifiers>win-x64;osx-x64</RuntimeIdentifiers>
         <PublishSingleFile>true</PublishSingleFile>
         <SelfContained>true</SelfContained>
         <PublishReadyToRun>true</PublishReadyToRun>
@@ -47,6 +47,7 @@
 
     <ItemGroup>
         <PackageReference Include="CommandLineParser" Version="2.9.1" />
+        <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
         <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
     </ItemGroup>
 
@@ -57,11 +58,19 @@
     <ItemGroup>
         <None Remove="vpnc-script-win.js" />
         <EmbeddedResource Include="vpnc-script-win.js" />
+
+        <None Remove="vpnc-script-osx.sh" />
+        <EmbeddedResource Include="vpnc-script-osx.sh" />
     </ItemGroup>
 
     <ItemGroup>
       <None Remove="Windows\libnative.x64.dll" />
       <Content Include="Windows\libnative.x64.dll">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+
+      <None Remove="OSX\libnative.x64.dylib" />
+      <Content Include="OSX\libnative.x64.dylib">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
     </ItemGroup>

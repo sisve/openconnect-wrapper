@@ -1,4 +1,4 @@
-﻿This repository contains a C# console application that uses the OpenConnect library to establish a vpn connection to a specified url. Credentials are provided using standard Windows apis, with the option to persist the credentials in the Windows Credentials Manager.
+This repository contains a C# console application that uses the OpenConnect library to establish a vpn connection to a specified url. Credentials are provided using standard operating system apis, with the option to persist the credentials.
 
 # Getting started
 
@@ -48,3 +48,12 @@ The start menu entry, and the bat file mention below, is part of the TAP Utiliti
 * If the start menu entry is missing, open a command prompt as Administrator and execute `"C:\Program Files\TAP-Windows\bin\tapinstall.exe" install "C:\Program Files\TAP-Windows\driver\OemVista.inf" tap0901`
 
 To later remove all virtual ethernet adapters, use the above steps for the start menu entry "Delete ALL TAP virtual ethernet adapters", or execute `"C:\Program Files\TAP-Windows\bin\tapinstall.exe" remove tap0901` in a command prompt running with administrator privileges.
+
+# Development and compiling
+
+## Mac
+
+This assumes that you have homebrew installed. Installation instructions for Homebrew can be found at https://brew.sh/
+
+1. Install .NET 7 SDK from https://dotnet.microsoft.com/en-us/download/dotnet/7.0
+2. Install OpenConnect with `homebrew install openconnect`

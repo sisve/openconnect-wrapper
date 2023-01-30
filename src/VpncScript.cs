@@ -2,6 +2,7 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using Mono.Unix.Native;
 
 namespace ConnectToUrl;
 
@@ -19,11 +20,14 @@ internal class VpnScript : DisposableAction {
     }
 
     [SupportedOSPlatform("Windows")]
+    [SupportedOSPlatform("OSX")]
     public static VpnScript Scoped() {
         String filenameBase;
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
             filenameBase = "vpnc-script-win";
+        } else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+            filenameBase = "vpnc-script";
         } else {
             throw new PlatformNotSupportedException();
         }
@@ -61,6 +65,7 @@ internal class VpnScript : DisposableAction {
     private record Files(String ScriptPath, FileStream LockStream);
 
     [SupportedOSPlatform("Windows")]
+    [SupportedOSPlatform("OSX")]
     private static Files CreateFiles(String filenameBase) {
         for (var attempt = 0; attempt < 10; ++attempt) {
             var random = Path.GetRandomFileName();
@@ -87,6 +92,26 @@ internal class VpnScript : DisposableAction {
                 continue;
             }
 
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+                var statResult = Syscall.stat(scriptPath, out var statBuf);
+                if (statResult != 0) {
+                    var errno = Stdlib.GetLastError();
+                    var errmsg = Stdlib.strerror(errno);
+                    Console.WriteLine($"stat returned error {statResult}, errno={errno}, errmsg='{errmsg}', retrying.");
+                    continue;
+                }
+
+                var perms = statBuf.st_mode;
+                var newPerms = perms | FilePermissions.S_IXUSR;
+                var chmodResult = Syscall.chmod(scriptPath, newPerms);
+                if (chmodResult != 0) {
+                    var errno = Stdlib.GetLastError();
+                    var errmsg = Stdlib.strerror(errno);
+                    Console.WriteLine($"chmod returned error {chmodResult}, errno={errno}, errmsg='{errmsg}', retrying.");
+                    continue;
+                }
+            }
+
             return new Files(scriptPath, lockStream);
         }
 
@@ -94,12 +119,15 @@ internal class VpnScript : DisposableAction {
     }
 
     [SupportedOSPlatform("Windows")]
+    [SupportedOSPlatform("OSX")]
     private static String GetVpncScriptContent() {
         var assembly = typeof(Program).Assembly;
         String resourceName;
         
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
             resourceName = $"{assembly.GetName().Name}.vpnc-script-win.js";
+        } else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+            resourceName = $"{assembly.GetName().Name}.vpnc-script-osx.sh";
         } else {
             throw new PlatformNotSupportedException();
         }

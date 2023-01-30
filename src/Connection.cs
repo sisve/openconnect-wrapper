@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
 using System.Threading;
+using Mono.Unix.Native;
 using static OpenConnect;
 
 namespace ConnectToUrl;
@@ -60,6 +61,7 @@ internal unsafe class Connection {
     }
 
     [SupportedOSPlatform("Windows")]
+    [SupportedOSPlatform("OSX")]
     internal Int32 Connect() {
         if (Url == null) {
             Console.Error.WriteLine("No Url specified.");
@@ -186,6 +188,7 @@ internal unsafe class Connection {
     }
     
     [SupportedOSPlatform("Windows")]
+    [SupportedOSPlatform("OSX")]
     private static Boolean SetSocketNonblocking(Int32 fd) {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
             var mode = 0u; // blocking
@@ -197,6 +200,20 @@ internal unsafe class Connection {
                 return false;
             }
 
+            return true;
+        }
+        
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+            var flags = Syscall.fcntl(fd, FcntlCommand.F_GETFL);
+            var newFlags = flags | (Int32)OpenFlags.O_NONBLOCK;
+            var fcntlResult = Syscall.fcntl(fd, FcntlCommand.F_SETFL, newFlags);
+            if (fcntlResult != 0) {
+                var errno = Stdlib.GetLastError();
+                var errmsg = Stdlib.strerror(errno);
+                Console.Error.WriteLine($"fcntl returned error {fcntlResult}, errno={errno}, errmsg='{errmsg}'");
+                return false;
+            }
+            
             return true;
         }
 
@@ -537,6 +554,7 @@ internal unsafe class Connection {
     }
 
     [SupportedOSPlatform("Windows")]
+    [SupportedOSPlatform("OSX")]
     public void Disconnect() {
         if (_cmd_fd == INVALID_SOCKET) {
             Console.Error.WriteLine("The command socket has been destroyed.");
@@ -547,6 +565,14 @@ internal unsafe class Connection {
             var bytesSent = Windows.Winsock2.send(_cmd_fd, OC_CMD_CANCEL, 1, 0);
             if (bytesSent < 0) {
                 Console.Error.WriteLine($"send returned error {bytesSent}");
+                return;
+            }
+        } else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+            var bytesSent = Syscall.write(_cmd_fd, OC_CMD_CANCEL, 1);
+            if (bytesSent < 0) {
+                var errno = Stdlib.GetLastError();
+                var errmsg = Stdlib.strerror(errno);
+                Console.Error.WriteLine($"write returned error {bytesSent}, errno={errno}, errmsg='{errmsg}'");
                 return;
             }
         } else {
