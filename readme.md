@@ -13,7 +13,8 @@
    1. When asked, accept to install TAP-Windows.
    2. When TAP-Windows asks, choose to install TAP Utilities.
 5. Download the latest release from https://github.com/sisve/openconnect-wrapper/releases
-6. Create a shortcut on your desktop to `\path\to\connect-to-url.exe https://vpn.domain.com/group`
+   1. If you are on Windows 10 64bit, download `connect-to-url.win-x64.exe`
+6. Create a shortcut on your desktop to `\path\to\connect-to-url.win-x64.exe https://vpn.domain.com/group`
 7. Configure the shortcut to run as administrator.
 
 To connect to several vpns, read more about multiple connections below, and repeat step 6 and 7 above to create a shortcut for every vpn.
