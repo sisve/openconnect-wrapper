@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace ConnectToUrl;
 
@@ -16,10 +18,19 @@ internal class VpnScript : DisposableAction {
         ScriptPath = scriptPath;
     }
 
+    [SupportedOSPlatform("Windows")]
     public static VpnScript Scoped() {
-        CleanupUnusedFiles();
+        String filenameBase;
 
-        var file = CreateFiles();
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+            filenameBase = "vpnc-script-win";
+        } else {
+            throw new PlatformNotSupportedException();
+        }
+
+        CleanupUnusedFiles(filenameBase);
+
+        var file = CreateFiles(filenameBase);
 
         return new VpnScript(file.ScriptPath, () => {
             file.LockStream.Close();
@@ -32,8 +43,8 @@ internal class VpnScript : DisposableAction {
         });
     }
 
-    private static void CleanupUnusedFiles() {
-        var existingFiles = Directory.EnumerateFiles(AppContext.BaseDirectory, "vpnc-script-win.*.js");
+    private static void CleanupUnusedFiles(String filenameBase) {
+        var existingFiles = Directory.EnumerateFiles(AppContext.BaseDirectory, $"{filenameBase}.*.js");
         foreach (var existingFile in existingFiles) {
             var lockFile = existingFile + ".lock";
             try {
@@ -49,11 +60,12 @@ internal class VpnScript : DisposableAction {
 
     private record Files(String ScriptPath, FileStream LockStream);
 
-    private static Files CreateFiles() {
+    [SupportedOSPlatform("Windows")]
+    private static Files CreateFiles(String filenameBase) {
         for (var attempt = 0; attempt < 10; ++attempt) {
             var random = Path.GetRandomFileName();
-            var scriptPath = Path.Combine(AppContext.BaseDirectory, $"vpnc-script-win.{random}.js");
-            var lockPath = Path.Combine(AppContext.BaseDirectory, $"vpnc-script-win.{random}.js.lock");
+            var scriptPath = Path.Combine(AppContext.BaseDirectory, $"{filenameBase}.{random}.js");
+            var lockPath = Path.Combine(AppContext.BaseDirectory, $"{filenameBase}.{random}.js.lock");
             if (File.Exists(scriptPath) || File.Exists(lockPath)) {
                 continue;
             }
@@ -81,10 +93,18 @@ internal class VpnScript : DisposableAction {
         throw new IOException("Failed to initialize the vpnc script after several attempts.");
     }
 
+    [SupportedOSPlatform("Windows")]
     private static String GetVpncScriptContent() {
         var assembly = typeof(Program).Assembly;
+        String resourceName;
+        
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+            resourceName = $"{assembly.GetName().Name}.vpnc-script-win.js";
+        } else {
+            throw new PlatformNotSupportedException();
+        }
 
-        using var stream = assembly.GetManifestResourceStream($"{assembly.GetName().Name}.vpnc-script-win.js");
+        using var stream = assembly.GetManifestResourceStream(resourceName);
         using var streamReader = new StreamReader(stream!);
         return streamReader.ReadToEnd();
     }

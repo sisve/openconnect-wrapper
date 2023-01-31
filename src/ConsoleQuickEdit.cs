@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using ConnectToUrl;
 
 internal static class ConsoleQuickEdit {
@@ -7,22 +8,36 @@ internal static class ConsoleQuickEdit {
     // To enable this mode, use ENABLE_QUICK_EDIT_MODE | ENABLE_EXTENDED_FLAGS.
     // To disable this mode, use ENABLE_EXTENDED_FLAGS without this flag.
     // Source: https://docs.microsoft.com/en-us/windows/console/setconsolemode#parameters
+    [SupportedOSPlatform("Windows")]
     private const UInt32 ENABLE_QUICK_EDIT = 0x0040;
 
     // The standard input device. Initially, this is the console input buffer, CONIN$.
     // Source: https://docs.microsoft.com/en-us/windows/console/getstdhandle#parameters
+    [SupportedOSPlatform("Windows")]
     private const Int32 STD_INPUT_HANDLE = -10;
 
+    [SupportedOSPlatform("Windows")]
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern IntPtr GetStdHandle(Int32 nStdHandle);
 
+    [SupportedOSPlatform("Windows")]
     [DllImport("kernel32.dll")]
     private static extern Boolean GetConsoleMode(IntPtr hConsoleHandle, out UInt32 lpMode);
 
+    [SupportedOSPlatform("Windows")]
     [DllImport("kernel32.dll")]
     private static extern Boolean SetConsoleMode(IntPtr hConsoleHandle, UInt32 dwMode);
 
     public static IDisposable Disable() {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+            return DisableWindows();
+        }
+
+        return DisposableAction.Noop;
+    }
+    
+    [SupportedOSPlatform("Windows")]
+    private static IDisposable DisableWindows() {
         IntPtr stdinHandle;
 
         try {

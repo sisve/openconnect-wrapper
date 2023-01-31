@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using ConnectToUrl;
+using System.Runtime.Versioning;
 
+namespace ConnectToUrl.Windows;
+
+[SupportedOSPlatform("Windows")]
 internal static class Winsock2 {
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
     public struct WSAData64 {

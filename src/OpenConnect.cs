@@ -4,6 +4,9 @@ using System.Runtime.InteropServices;
 using ConnectToUrl;
 
 internal abstract unsafe class OpenConnect {
+    internal const String DllName = "openconnect";
+    internal const String WindowsDllName = "libopenconnect-5";
+
     public enum OC_FORM_OPT_TYPE {
         TEXT = 1, // OC_FORM_OPT_TEXT
         PASSWORD = 2, // OC_FORM_OPT_PASSWORD
@@ -204,12 +207,24 @@ internal abstract unsafe class OpenConnect {
         [OriginalType("struct oc_auth_form*")]
         oc_auth_form* form
     );
+    
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void openconnect_progress_vfn(
+        void* privdata,
+        Int32 level,
+
+        [OriginalType("const char*")]
+        Char* fmt,
+
+        [OriginalType("...")]
+        void* args
+    );
 
     public delegate void openconnect_setup_tun_vfn(
         void* privdata
     );
 
-    [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_set_option_value")]
+    [DllImport(DllName, EntryPoint = "openconnect_set_option_value")]
     public static extern Int32 openconnect_set_option_value(
         oc_form_opt* opt,
 
@@ -217,12 +232,12 @@ internal abstract unsafe class OpenConnect {
         String value
     );
 
-    [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_obtain_cookie")]
+    [DllImport(DllName, EntryPoint = "openconnect_obtain_cookie")]
     public static extern Int32 openconnect_obtain_cookie(
         openconnect_info* vpninfo
     );
 
-    [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_set_reported_os")]
+    [DllImport(DllName, EntryPoint = "openconnect_set_reported_os")]
     public static extern Int32 openconnect_set_reported_os(
         openconnect_info* param0,
 
@@ -231,7 +246,7 @@ internal abstract unsafe class OpenConnect {
         String os
     );
 
-    [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_get_ip_info")]
+    [DllImport(DllName, EntryPoint = "openconnect_get_ip_info")]
     public static extern Int32 openconnect_get_ip_info(
         openconnect_info* vpninfo,
 
@@ -245,22 +260,22 @@ internal abstract unsafe class OpenConnect {
         oc_vpn_option** dtls_options
     );
 
-    [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_disable_ipv6")]
+    [DllImport(DllName, EntryPoint = "openconnect_disable_ipv6")]
     public static extern Int32 openconnect_disable_ipv6(
         openconnect_info* vpninfo
     );
 
-    [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_disable_dtls")]
+    [DllImport(DllName, EntryPoint = "openconnect_disable_dtls")]
     public static extern Int32 openconnect_disable_dtls(
         openconnect_info* vpninfo
     );
 
-    [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_reset_ssl")]
+    [DllImport(DllName, EntryPoint = "openconnect_reset_ssl")]
     public static extern void openconnect_reset_ssl(
         openconnect_info* vpninfo
     );
 
-    [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_parse_url")]
+    [DllImport(DllName, EntryPoint = "openconnect_parse_url")]
     public static extern Int32 openconnect_parse_url(
         openconnect_info* vpninfo,
 
@@ -269,35 +284,35 @@ internal abstract unsafe class OpenConnect {
         String url
     );
 
-    [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_set_cert_expiry_warning")]
+    [DllImport(DllName, EntryPoint = "openconnect_set_cert_expiry_warning")]
     public static extern void openconnect_set_cert_expiry_warning(
         openconnect_info* vpninfo,
         Int32 seconds
     );
 
-    [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_set_pfs")]
+    [DllImport(DllName, EntryPoint = "openconnect_set_pfs")]
     public static extern void openconnect_set_pfs(
         openconnect_info* vpninfo,
         UInt32 val
     );
 
-    [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_set_allow_insecure_crypto")]
+    [DllImport(DllName, EntryPoint = "openconnect_set_allow_insecure_crypto")]
     public static extern Int32 openconnect_set_allow_insecure_crypto(
         openconnect_info* vpninfo,
         UInt32 val
     );
 
-    [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_setup_cmd_pipe", SetLastError = true)]
+    [DllImport(DllName, EntryPoint = "openconnect_setup_cmd_pipe", SetLastError = true)]
     public static extern Int32 openconnect_setup_cmd_pipe(
         openconnect_info* vpninfo
     );
 
-    [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_make_cstp_connection")]
+    [DllImport(DllName, EntryPoint = "openconnect_make_cstp_connection")]
     public static extern Int32 openconnect_make_cstp_connection(
         openconnect_info* vpninfo
     );
 
-    [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_setup_tun_device")]
+    [DllImport(DllName, EntryPoint = "openconnect_setup_tun_device")]
     public static extern Int32 openconnect_setup_tun_device(
         openconnect_info* vpninfo,
 
@@ -310,14 +325,14 @@ internal abstract unsafe class OpenConnect {
         String? ifname
     );
 
-    [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_mainloop")]
+    [DllImport(DllName, EntryPoint = "openconnect_mainloop")]
     public static extern Int32 openconnect_mainloop(
         openconnect_info* vpninfo,
         Int32 reconnect_timeout,
         Int32 reconnect_interval
     );
 
-    [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_vpninfo_new")]
+    [DllImport(DllName, EntryPoint = "openconnect_vpninfo_new")]
     [return: NotNull]
     public static extern openconnect_info* openconnect_vpninfo_new(
         [OriginalType("const char*")]
@@ -327,34 +342,32 @@ internal abstract unsafe class OpenConnect {
         openconnect_validate_peer_cert_vfn? param1,
         openconnect_write_new_config_vfn? param2,
         openconnect_process_auth_form_vfn? param3,
-
-        [OriginalType("void (void *privdata, int level, const char *fmt, ...)")]
-        delegate* unmanaged[Cdecl] <void*, Int32, Char*, void*, void> param4,
+        openconnect_progress_vfn? param4,
 
         void* privdata
     );
 
-    [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_vpninfo_free")]
+    [DllImport(DllName, EntryPoint = "openconnect_vpninfo_free")]
     public static extern void openconnect_vpninfo_free(
         openconnect_info* vpninfo
     );
 
-    [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_get_supported_protocols")]
+    [DllImport(DllName, EntryPoint = "openconnect_get_supported_protocols")]
     public static extern Int32 openconnect_get_supported_protocols(
         oc_vpn_proto** protos
     );
 
-    [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_free_supported_protocols")]
+    [DllImport(DllName, EntryPoint = "openconnect_free_supported_protocols")]
     public static extern void openconnect_free_supported_protocols(
         oc_vpn_proto* protos
     );
 
-    [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_get_protocol")]
+    [DllImport(DllName, EntryPoint = "openconnect_get_protocol")]
     public static extern Char* openconnect_get_protocol(
         openconnect_info* vpninfo
     );
 
-    [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_set_protocol")]
+    [DllImport(DllName, EntryPoint = "openconnect_set_protocol")]
     public static extern Int32 openconnect_set_protocol(
         openconnect_info* vpninfo,
 
@@ -363,7 +376,7 @@ internal abstract unsafe class OpenConnect {
         String protocol
     );
 
-    [DllImport("libopenconnect-5.dll", EntryPoint = "openconnect_set_setup_tun_handler")]
+    [DllImport(DllName, EntryPoint = "openconnect_set_setup_tun_handler")]
     public static extern void openconnect_set_setup_tun_handler(
         openconnect_info* vpninfo,
         openconnect_setup_tun_vfn setup_tun

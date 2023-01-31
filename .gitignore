@@ -1,5 +1,8 @@
 ﻿/.idea/
+/src/.idea/
 /src/bin/
 /src/obj/
+/src-native/.idea/
+/src-native/cmake-build-debug/
 
 /*.user

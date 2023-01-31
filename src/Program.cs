@@ -1,5 +1,6 @@
 ﻿using System;
-using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace ConnectToUrl;
 
@@ -14,25 +15,25 @@ internal static class Program {
             return FailWithExitCode(FAILURE);
         }
 
-        if (args.Length == 0) {
-            Console.Error.WriteLine("Expected a single parameter with the url to connect to.");
+        NativeLibrary.SetDllImportResolver(typeof(Program).Assembly, ResolveLibrary);
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+            /* allow */
+        } else {
+            Console.WriteLine("This application does not support your operating system.");
+            Console.WriteLine($"RuntimeInformation.RuntimeIdentifier='{RuntimeInformation.RuntimeIdentifier}'");
             return FailWithExitCode(FAILURE);
         }
 
-        var dllDirectory = @"C:\Program Files\OpenConnect";
-        var dllPath = Path.Combine(dllDirectory, "libopenconnect-5.dll");
-        if (!File.Exists(dllPath)) {
-            Console.Error.WriteLine($"Missing file {dllPath}, have you installed OpenConnect?");
+        if (!Services.OSFunctionality.CheckForOpenConnectInstallation()) {
             return FailWithExitCode(FAILURE);
         }
 
         Console.WriteLine($"IntPtr.Size={IntPtr.Size}");
+        Console.WriteLine($"RuntimeInformation.RuntimeIdentifier='{RuntimeInformation.RuntimeIdentifier}'");
 
         using (ConsoleQuickEdit.Disable())
         using (var vpncScript = VpnScript.Scoped()) {
-            // Make [DllImport] load libopenconnect from dllDirectory.
-            Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH") + ";" + dllDirectory);
-
             Console.WriteLine($"Using vpnc script at {vpncScript.ScriptPath}");
             var connection = new Connection {
                 Url = parsedArgs.Url,
@@ -58,8 +59,25 @@ internal static class Program {
         }
     }
 
+    private static IntPtr ResolveLibrary(String libraryName, Assembly assembly, DllImportSearchPath? searchPath) {
+        if (libraryName == OpenConnect.DllName && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+            if (NativeLibrary.TryLoad(OpenConnect.WindowsDllName, assembly, searchPath, out var handle)) {
+                return handle;
+            }
+        }
+
+        {
+            if (NativeLibrary.TryLoad(libraryName, assembly, searchPath, out var handle)) {
+                return handle;
+            }
+        }
+
+        Console.Error.WriteLine($"Resolver: Failed to resolve library '{libraryName}'");
+        return IntPtr.Zero;
+    }
+
     private static Int32 FailWithExitCode(Int32 exitCode) {
-        if (Environment.GetEnvironmentVariable("PROMPT") == null) {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Environment.GetEnvironmentVariable("PROMPT") == null) {
             // The PROMPT environment variable is present when executed from a
             // command prompt, but is missing when executed from a shortcut.
             //

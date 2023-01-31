@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
+using System.Runtime.Versioning;
 using System.Threading;
-using static CredentialManager;
 using static OpenConnect;
-using static Winsock2;
 
 namespace ConnectToUrl;
 
@@ -33,20 +30,22 @@ internal unsafe class Connection {
 
     // We're holding on to the delegates here, to make sure they are never
     // garbage collected while the class is still alive.
-    private readonly openconnect_process_auth_form_vfn? ProcessAuthFormDelegate;
+    private readonly openconnect_process_auth_form_vfn ProcessAuthFormDelegate;
     private readonly openconnect_setup_tun_vfn SetupTunDelegate;
+    private readonly openconnect_progress_vfn ProgressDelegate;
 
     private State* _state;
     private Int32 _cmd_fd = INVALID_SOCKET;
 
     private Boolean _isFirstAuthAttempt = true;
-    private Credentials? _currentCredentials;
+    private IVpnCredentials? _currentCredentials;
 
     internal Connection() {
         _loopThread = new Thread(MainLoop);
 
         ProcessAuthFormDelegate = ProcessAuthForm;
         SetupTunDelegate = SetupTunHandler;
+        ProgressDelegate = Services.OSFunctionality.CreateOpenConnectLogger(ProgressCallback);
     }
 
     public String? Url { get; init; }
@@ -59,18 +58,21 @@ internal unsafe class Connection {
         public openconnect_info* vpninfo;
     }
 
+    [SupportedOSPlatform("Windows")]
     internal Int32 Connect() {
         if (Url == null) {
             Console.Error.WriteLine("No Url specified.");
             return FAILURE;
         }
 
-        // init winsock
-        var wsaResult = WSAStartup(Helper.MakeWord(1, 1), out _);
-        if (wsaResult != 0) {
-            Console.Error.WriteLine($"WSAStartup failed with {wsaResult}");
-            Console.Error.WriteLine("Check https://learn.microsoft.com/en-us/windows/win32/api/winsock/nf-winsock-wsastartup");
-            return FAILURE;
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+            // init winsock
+            var wsaResult = Windows.Winsock2.WSAStartup(Helper.MakeWord(1, 1), out _);
+            if (wsaResult != 0) {
+                Console.Error.WriteLine($"WSAStartup failed with {wsaResult}");
+                Console.Error.WriteLine("Check https://learn.microsoft.com/en-us/windows/win32/api/winsock/nf-winsock-wsastartup");
+                return FAILURE;
+            }
         }
 
         _state = Helper.AllocHGlobal<State>();
@@ -83,7 +85,7 @@ internal unsafe class Connection {
                 null,
                 null,
                 ProcessAuthFormDelegate,
-                &ProgressCallback,
+                ProgressDelegate,
                 _state
             );
         } catch (BadImageFormatException ex) {
@@ -108,13 +110,8 @@ internal unsafe class Connection {
             goto failure;
         }
 
-        var mode = 0u; // blocking
-        var FIONBIO = -2147195266;
-        var ioctlResult = ioctlsocket(new IntPtr(_cmd_fd), FIONBIO, &mode);
-        if (ioctlResult != 0) {
-            Console.Error.WriteLine($"ioctlsocket returned error {ioctlResult}");
-            Console.Error.WriteLine("Check https://learn.microsoft.com/en-us/windows/win32/api/winsock/nf-winsock-ioctlsocket");
-            goto failure;
+        if (!SetSocketNonblocking(_cmd_fd)) {
+            return FAILURE;
         }
 
         var setProtoResult = openconnect_set_protocol(vpninfo, "anyconnect");
@@ -185,6 +182,25 @@ internal unsafe class Connection {
 
         Helper.FreeHGlobal(ref _state);
         return FAILURE;
+    }
+    
+    [SupportedOSPlatform("Windows")]
+    private static Boolean SetSocketNonblocking(Int32 fd) {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+            var mode = 0u; // blocking
+            var FIONBIO = -2147195266;
+            var ioctlResult = Windows.Winsock2.ioctlsocket(new IntPtr(fd), FIONBIO, &mode);
+            if (ioctlResult != 0) {
+                Console.Error.WriteLine($"ioctlsocket returned error {ioctlResult}");
+                Console.Error.WriteLine("Check https://learn.microsoft.com/en-us/windows/win32/api/winsock/nf-winsock-ioctlsocket");
+                return false;
+            }
+
+            return true;
+        }
+
+        Console.Error.WriteLine($"SetSocketNonblocking: Unsupported platform '{RuntimeInformation.RuntimeIdentifier}'");
+        return false;
     }
 
     private static void SetupTunHandler(void* _privdata) {
@@ -333,11 +349,20 @@ internal unsafe class Connection {
                 _currentCredentials.Fail();
 
                 BoxContent("Auth: Showing user interface to ask for credentials...");
-                var ERROR_NETWORK_ACCESS_DENIED = 65;
-                _currentCredentials = AskForCredentials(messageText, ERROR_NETWORK_ACCESS_DENIED, true);
+                try {
+                    _currentCredentials = Services.CredentialManager.ForceAskForCredentials(Url!, messageText);
+                } catch (NotSupportedException) {
+                    BoxContent("Auth: Credential manager returned not-supported.");
+                    goto noCredentialManager;
+                }
             } else {
                 BoxContent("Auth: Asking user for potentially stored credentials...");
-                _currentCredentials = AskForCredentials(messageText);
+                try {
+                    _currentCredentials = Services.CredentialManager.AskForCredentials(Url!, messageText);
+                } catch (NotSupportedException) {
+                    BoxContent("Auth: Credential manager returned not-supported.");
+                    goto noCredentialManager;
+                }
             }
 
             if (_currentCredentials == null) {
@@ -349,6 +374,8 @@ internal unsafe class Connection {
             newValues["username"] = _currentCredentials.Username;
             newValues["password"] = _currentCredentials.Password;
         }
+        
+        noCredentialManager:
 
         if (_isFirstAuthAttempt && formFields.ContainsKey("secondary_password") && SecondaryPassword != null) {
             BoxContent("Auth: Detected 'secondary_password' field, auto-filling on first login attempt.");
@@ -396,19 +423,9 @@ internal unsafe class Connection {
         return OC_FORM_RESULT_OK;
     }
 
-    /// <summary>
-    ///   The native delegate is variadic and passes us a va_list. Neither C#,
-    ///   nor the marshaller, supports va_list. We accept a pointer to
-    ///   _something_, and then let VaListReader do its magic to understand
-    ///   the content.
-    /// </summary>
-    [UnmanagedCallersOnly(CallConvs = new[] {
-        typeof(CallConvCdecl)
-    })]
-    private static void ProgressCallback(void* _privdata, Int32 level, Char* formatPtr, void* vaList) {
-        var privdata = (State*)_privdata;
-        var vaListReader = new VaListReader(&vaList);
-
+    private static void ProgressCallback(void* _privdata, Int32 level, Char* formatted) {
+        State* privdata = (State*)_privdata;
+        
         // Unclear naming; the numeric values are lower for severe log levels
         // Choosing PRG_INFO (1) means we should discard PRG_DEBUG (2) and
         // PRG_TRACE (3).
@@ -416,16 +433,13 @@ internal unsafe class Connection {
             return;
         }
 
-        var format = Helper.PtrToStringAnsi(formatPtr);
-        if (format == null) {
-            return;
-        }
-
-        var message = PrintfFormatter.Format(format, vaListReader);
-        if (level == 0) {
-            Console.Error.WriteLine($"VPN: [{level}] {message.Trim()}");
-        } else {
-            Console.WriteLine($"VPN: [{level}] {message.Trim()}");
+        var message = Helper.PtrToStringAnsi(formatted);
+        if (message != null) {
+            if (level == 0) {
+                Console.Error.WriteLine($"VPN: [{level}] {message.Trim()}");
+            } else {
+                Console.WriteLine($"VPN: [{level}] {message.Trim()}");
+            }
         }
     }
 
@@ -472,16 +486,21 @@ internal unsafe class Connection {
         }
     }
 
+    [SupportedOSPlatform("Windows")]
     public void Disconnect() {
         if (_cmd_fd == INVALID_SOCKET) {
             Console.Error.WriteLine("The command socket has been destroyed.");
             return;
         }
 
-        var bytesSent = send(_cmd_fd, OC_CMD_CANCEL, 1, 0);
-        if (bytesSent < 0) {
-            Console.Error.WriteLine($"send returned error {bytesSent}");
-            return;
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+            var bytesSent = Windows.Winsock2.send(_cmd_fd, OC_CMD_CANCEL, 1, 0);
+            if (bytesSent < 0) {
+                Console.Error.WriteLine($"send returned error {bytesSent}");
+                return;
+            }
+        } else {
+            throw new PlatformNotSupportedException();
         }
 
         _loopThread.Join();
@@ -489,116 +508,5 @@ internal unsafe class Connection {
 
     public void WaitForDisconnect() {
         _hasDisconnected.Wait();
-    }
-
-    public Credentials? AskForCredentials(String messageText, Int32 previousError = 0, Boolean forceShowUI = false) {
-        var credReq = new CREDUI_INFOW {
-            pszCaptionText = "VPN credentials",
-            pszMessageText = messageText,
-        };
-
-        credReq.cbSize = Marshal.SizeOf(credReq);
-
-        var performSave = false;
-        var shouldConfirm = true;
-
-        var targetName = "VPN: " + Url;
-        var maxUsernameLength = 100;
-        var maxPasswordLength = 100;
-        var usernameBuf = new StringBuilder(maxUsernameLength);
-        var passwordBuf = new StringBuilder(maxPasswordLength);
-
-        var flags =
-            CREDUI_FLAGS.CREDUI_FLAGS_EXCLUDE_CERTIFICATES |
-            CREDUI_FLAGS.CREDUI_FLAGS_SHOW_SAVE_CHECK_BOX |
-            CREDUI_FLAGS.CREDUI_FLAGS_GENERIC_CREDENTIALS |
-            CREDUI_FLAGS.CREDUI_FLAGS_EXPECT_CONFIRMATION;
-
-        if (previousError != 0) {
-            flags |= CREDUI_FLAGS.CREDUI_FLAGS_INCORRECT_PASSWORD;
-        }
-
-        if (forceShowUI) {
-            flags |= CREDUI_FLAGS.CREDUI_FLAGS_ALWAYS_SHOW_UI;
-        }
-
-        var promptResult = CredUIPromptForCredentialsW(
-            ref credReq,
-            targetName,
-            IntPtr.Zero,
-            previousError,
-            usernameBuf, maxUsernameLength,
-            passwordBuf, maxPasswordLength,
-            ref performSave,
-            flags
-        );
-
-        if (promptResult == ERROR_NO_SUCH_LOGON_SESSION) {
-            // Retry without persisting.
-            shouldConfirm = false;
-            flags =
-                CREDUI_FLAGS.CREDUI_FLAGS_DO_NOT_PERSIST |
-                CREDUI_FLAGS.CREDUI_FLAGS_EXCLUDE_CERTIFICATES |
-                CREDUI_FLAGS.CREDUI_FLAGS_GENERIC_CREDENTIALS;
-
-            if (previousError != 0) {
-                flags |= CREDUI_FLAGS.CREDUI_FLAGS_INCORRECT_PASSWORD;
-            }
-
-            if (forceShowUI) {
-                flags |= CREDUI_FLAGS.CREDUI_FLAGS_ALWAYS_SHOW_UI;
-            }
-
-            promptResult = CredUIPromptForCredentialsW(
-                ref credReq,
-                $"VPN: {Url}",
-                IntPtr.Zero,
-                previousError,
-                usernameBuf, maxUsernameLength,
-                passwordBuf, maxPasswordLength,
-                ref performSave,
-                flags
-            );
-        }
-
-        if (promptResult == ERROR_CANCELLED) {
-            return null;
-        }
-
-        if (promptResult != NO_ERROR) {
-            Console.Error.WriteLine($"CredUIPromptForCredentials returned error {promptResult} with flags={flags}");
-            return null;
-        }
-
-        return new Credentials(targetName, usernameBuf.ToString(), passwordBuf.ToString(), shouldConfirm);
-    }
-
-    internal class Credentials {
-        private readonly String _targetName;
-        private readonly Boolean _shouldConfirm;
-
-        public Credentials(String targetName, String username, String password, Boolean shouldConfirm) {
-            _targetName = targetName;
-            _shouldConfirm = shouldConfirm;
-            Username = username;
-            Password = password;
-        }
-
-        public String Username { get; }
-        public String Password { get; }
-
-        public void Fail() {
-            if (_shouldConfirm) {
-                // We do not care about the result.
-                _ = CredUIConfirmCredentialsW(_targetName, false);
-            }
-        }
-
-        public void Success() {
-            if (_shouldConfirm) {
-                // We do not care about the result.
-                _ = CredUIConfirmCredentialsW(_targetName, true);
-            }
-        }
     }
 }
