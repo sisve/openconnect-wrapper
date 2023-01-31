@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using System.Text;
 using System.Threading;
 using static OpenConnect;
 
@@ -244,7 +245,7 @@ internal unsafe class Connection {
         Console.WriteLine("#################################");
     }
 
-    private record AuthFormField(String Name);
+    private record AuthFormField(String Name, OC_FORM_OPT_TYPE Type);
 
     private Int32 ProcessAuthForm(void* _privdata, oc_auth_form* form) {
         String F(String? input) {
@@ -331,7 +332,7 @@ internal unsafe class Connection {
 
             BoxContent();
 
-            formFields[fieldName!] = new AuthFormField(fieldName!);
+            formFields[fieldName!] = new AuthFormField(fieldName!, ocField->type);
             ocField = ocField->next;
         }
 
@@ -393,7 +394,11 @@ internal unsafe class Connection {
             foreach (var formField in missingFormFields) {
                 BoxContent($" * Enter value for field '{formField.Name}': ", newLine: false);
 
-                var input = Console.ReadLine();
+                var input = formField.Type switch {
+                    OC_FORM_OPT_TYPE.PASSWORD => ReadSecretFromConsole(),
+                    _ => Console.ReadLine(),
+                };
+
                 if (String.IsNullOrWhiteSpace(input)) {
                     BoxContent();
                     BoxBorderBottom();
@@ -421,6 +426,51 @@ internal unsafe class Connection {
 
         _isFirstAuthAttempt = false;
         return OC_FORM_RESULT_OK;
+    }
+
+    private static String? ReadSecretFromConsole() {
+        var sb = new StringBuilder();
+        var rng = new Random();
+        var starCounts = new Stack<Int32>();
+
+        while (true) {
+            var keyInfo = Console.ReadKey(true);
+
+            if (keyInfo.Key == ConsoleKey.Enter) {
+                // Console.ReadLine() adds a newline at the end.
+                Console.WriteLine();
+                break;
+            }
+
+            if (keyInfo.Key == ConsoleKey.Backspace) {
+                if (sb.Length > 0) {
+                    // Move back, and clear out the *.
+                    var prevStarCount = starCounts.Pop();
+                    var clearStr =
+                        new String('\b', prevStarCount) +
+                        new String('\0', prevStarCount) +
+                        new String('\b', prevStarCount);
+
+                    Console.Write(clearStr);
+                    sb.Length--;
+                }
+
+                continue;
+            }
+
+            if (sb.Length == 0 && keyInfo is { Key: ConsoleKey.Z, Modifiers: ConsoleModifiers.Control }) {
+                // Console.ReadLine() returns null on Ctrl+Z, if it is the first character in the input
+                Console.WriteLine();
+                return null;
+            }
+
+            var starCount = rng.Next(1, 4);
+            starCounts.Push(starCount);
+            Console.Write(new String('*', starCount));
+            sb.Append(keyInfo.KeyChar);
+        }
+
+        return sb.ToString();
     }
 
     private static void ProgressCallback(void* _privdata, Int32 level, Char* formatted) {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace ConnectToUrl;
 
@@ -8,6 +9,7 @@ internal static class Program {
     private const Int32 SUCCESS = 0;
     private const Int32 FAILURE = 1;
 
+    [SupportedOSPlatform("Windows")]
     public static Int32 Main(String[] args) {
         CommandLineArgs? parsedArgs;
         if (!CommandLineArgs.TryParse(args, out parsedArgs)) {
