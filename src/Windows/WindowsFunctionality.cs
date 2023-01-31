@@ -19,6 +19,18 @@ internal class WindowsFunctionality : IOSFunctionality {
     [DllImport("kernel32", SetLastError = true)]
     private static extern IntPtr LoadLibrary(String lpFileName);
 
+    public Boolean Init() {
+        // init winsock
+        var wsaResult = Windows.Winsock2.WSAStartup(Helper.MakeWord(1, 1), out _);
+        if (wsaResult != 0) {
+            Console.Error.WriteLine($"WSAStartup failed with {wsaResult}");
+            Console.Error.WriteLine("Check https://learn.microsoft.com/en-us/windows/win32/api/winsock/nf-winsock-wsastartup");
+            return false;
+        }
+
+        return true;
+    }
+    
     public Boolean CheckForOpenConnectInstallation() {
         var dllDirectory = @"C:\Program Files\OpenConnect";
         var dllPath = Path.Combine(dllDirectory, "libopenconnect-5.dll");
@@ -53,5 +65,28 @@ internal class WindowsFunctionality : IOSFunctionality {
         registerCallback(callback);
 
         return Marshal.GetDelegateForFunctionPointer<OpenConnect.openconnect_progress_vfn>(openconnectCallbackHandle);
+    }
+
+    public unsafe Boolean SetSocketNonblocking(Int32 fd) {
+        var mode = 0u; // blocking
+        var FIONBIO = -2147195266;
+        var ioctlResult = Windows.Winsock2.ioctlsocket(new IntPtr(fd), FIONBIO, &mode);
+        if (ioctlResult != 0) {
+            Console.Error.WriteLine($"ioctlsocket returned error {ioctlResult}");
+            Console.Error.WriteLine("Check https://learn.microsoft.com/en-us/windows/win32/api/winsock/nf-winsock-ioctlsocket");
+            return false;
+        }
+
+        return true;
+    }
+
+    public unsafe Int64 send(Int32 fd, Char* buffer, UInt32 length) {
+        var bytesSent = Winsock2.send(fd, buffer, (Int32)length, 0);
+        if (bytesSent < 0) {
+            Console.Error.WriteLine($"send returned error {bytesSent}");
+            return bytesSent;
+        }
+
+        return bytesSent;
     }
 }

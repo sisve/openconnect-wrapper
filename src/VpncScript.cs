@@ -2,7 +2,6 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using Mono.Unix.Native;
 
 namespace ConnectToUrl;
 
@@ -92,25 +91,25 @@ internal class VpnScript : DisposableAction {
                 continue;
             }
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-                var statResult = Syscall.stat(scriptPath, out var statBuf);
-                if (statResult != 0) {
-                    var errno = Stdlib.GetLastError();
-                    var errmsg = Stdlib.strerror(errno);
-                    Console.WriteLine($"stat returned error {statResult}, errno={errno}, errmsg='{errmsg}', retrying.");
-                    continue;
-                }
-
-                var perms = statBuf.st_mode;
-                var newPerms = perms | FilePermissions.S_IXUSR;
-                var chmodResult = Syscall.chmod(scriptPath, newPerms);
-                if (chmodResult != 0) {
-                    var errno = Stdlib.GetLastError();
-                    var errmsg = Stdlib.strerror(errno);
-                    Console.WriteLine($"chmod returned error {chmodResult}, errno={errno}, errmsg='{errmsg}', retrying.");
-                    continue;
-                }
+#if MACOS
+            var statResult = Mono.Unix.Native.Syscall.stat(scriptPath, out var statBuf);
+            if (statResult != 0) {
+                var errno = Mono.Unix.Native.Stdlib.GetLastError();
+                var errmsg = Mono.Unix.Native.Stdlib.strerror(errno);
+                Console.WriteLine($"stat returned error {statResult}, errno={errno}, errmsg='{errmsg}', retrying.");
+                continue;
             }
+
+            var perms = statBuf.st_mode;
+            var newPerms = perms | Mono.Unix.Native.FilePermissions.S_IXUSR;
+            var chmodResult = Mono.Unix.Native.Syscall.chmod(scriptPath, newPerms);
+            if (chmodResult != 0) {
+                var errno = Mono.Unix.Native.Stdlib.GetLastError();
+                var errmsg = Mono.Unix.Native.Stdlib.strerror(errno);
+                Console.WriteLine($"chmod returned error {chmodResult}, errno={errno}, errmsg='{errmsg}', retrying.");
+                continue;
+            }
+#endif
 
             return new Files(scriptPath, lockStream);
         }
@@ -123,7 +122,7 @@ internal class VpnScript : DisposableAction {
     private static String GetVpncScriptContent() {
         var assembly = typeof(Program).Assembly;
         String resourceName;
-        
+
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
             resourceName = $"{assembly.GetName().Name}.vpnc-script-win.js";
         } else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {

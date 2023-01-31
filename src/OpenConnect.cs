@@ -7,6 +7,9 @@ internal abstract unsafe class OpenConnect {
     internal const String DllName = "openconnect";
     internal const String WindowsDllName = "libopenconnect-5";
 
+    public const Int32 EAGAIN = 11;
+    public const Int32 EINVAL = 22;
+
     [SourceReference("openconnect.h", 218, 224)]
     public enum OC_FORM_OPT_TYPE {
         TEXT = 1, // OC_FORM_OPT_TEXT
@@ -174,6 +177,20 @@ internal abstract unsafe class OpenConnect {
         public Char* option;
         public Char* value;
         public oc_vpn_option* next;
+    }
+
+    /// <summary>
+    ///   Used by openconnect_webview_load_changed() to return data to OC.
+    ///   The arrays must contain an even number of const strings, with names and
+    ///   values, and a NULL to terminate. E.g.:
+    ///   name0, val0, name1, val1, NULL
+    /// </summary>
+    [SourceReference("openconnect.h", 342, 346)]
+    [StructLayout(LayoutKind.Sequential)]
+    public struct oc_webview_result {
+        public Char* uri;
+        public Char** cookies;
+        public Char** headers;
     }
 
     [SourceReference("openconnect.h", 350)]
@@ -444,6 +461,32 @@ internal abstract unsafe class OpenConnect {
     [DllImport(DllName, EntryPoint = "openconnect_vpninfo_free")]
     public static extern void openconnect_vpninfo_free(
         openconnect_info* vpninfo
+    );
+    
+    [SourceReference("openconnect.h", 772, 774)]
+    public delegate Int32 openconnect_open_webview_vfn(
+        openconnect_info* vpninfo,
+
+        [SourceType("const char*")]
+        Char* uri,
+
+        void* privdata
+    );
+
+    [SourceReference("openconnect.h", 776, 777)]
+    [DllImport(DllName, EntryPoint = "openconnect_set_webview_callback")]
+    public static extern void openconnect_set_webview_callback(
+        openconnect_info* vpninfo, 
+        openconnect_open_webview_vfn webview_fn
+    );
+
+    [SourceReference("openconnect.h", 779, 780)]
+    [DllImport(DllName, EntryPoint = "openconnect_webview_load_changed")]
+    public static extern Int32 openconnect_webview_load_changed(
+        openconnect_info* vpninfo,
+
+        [SourceType("const struct oc_webview_result")]
+        oc_webview_result* result
     );
     
     /// <summary>

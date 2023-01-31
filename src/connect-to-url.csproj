@@ -1,17 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
+        <Configurations>webview;core</Configurations>
 
-        <!-- We only support x64 -->
+        <!-- 
+            A list of all possible platforms and target frameworks.
+            The configuration will pick one below.
+        -->
+        <Platforms>win-x64;osx-x64</Platforms>
         <PlatformTarget>AnyCPU</PlatformTarget>
-        <RuntimeIdentifiers>win-x64;osx-x64</RuntimeIdentifiers>
 
-        <TargetFramework>net7.0</TargetFramework>
+        <!-- Do not include all project files by default, we opt-in files below. -->
+        <EnableDefaultItems>false</EnableDefaultItems>
 
         <!-- Enable nullable reference types -->
         <Nullable>enable</Nullable>
 
-        <!-- We are heave [ab]users of pointers and unsafe code -->
+        <!-- We are heavy [ab]users of pointers and unsafe code -->
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
         <!-- Make sure that the contained native libraries, marked as Content, are included and extracted -->
@@ -38,16 +43,57 @@
         <!-- Use embedded debug symboles -->
         <DebugSymbols>true</DebugSymbols>
         <DebugType>embedded</DebugType>
+        
+        <!--
+            Example size reductions:
+                               original:     compressed:   size:
+            osx-x64            13 855 KiB    11 908 KiB    86%
+            win-x64            11 971 KiB    10 342 KiB    86%
+            win-x64.webview   156 596 KiB    70 050 KiB    45%
+         -->
+        <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    </PropertyGroup>
+    
+    <PropertyGroup Condition=" '$(Platform)' == 'win-x64' ">
+        <DefineConstants>WINDOWS</DefineConstants>
+        <TargetFramework>net7.0</TargetFramework>
+        <PlatformTarget>x64</PlatformTarget>
+        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'webview|win-x64' ">
+        <DefineConstants>WINDOWS;WEBVIEW</DefineConstants>
+        <TargetFramework>net7.0-windows</TargetFramework>
+
+        <!-- Enable Windows Forms, which doesn't support trimming -->
+        <UseWindowsForms>true</UseWindowsForms>
+        <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+        <PublishTrimmed>false</PublishTrimmed>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Platform)' == 'osx-x64' ">
+        <DefineConstants>MACOS</DefineConstants>
+        <TargetFramework>net7.0</TargetFramework>
+        <PlatformTarget>x64</PlatformTarget>
+        <RuntimeIdentifier>osx-x64</RuntimeIdentifier>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="CommandLineParser" Version="2.9.1" />
-        <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
         <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(Configuration)|$(Platform)' == 'webview|win-x64' ">
+        <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.1518.46" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(Platform)' == 'osx-x64' ">
+        <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
     </ItemGroup>
 
     <ItemGroup>
         <TrimmerRootDescriptor Include="TrimRoots.xml" />
+        <Compile Include="*.cs" />
     </ItemGroup>
 
     <ItemGroup>
@@ -58,15 +104,24 @@
         <EmbeddedResource Include="vpnc-script-osx.sh" />
     </ItemGroup>
 
-    <ItemGroup>
-      <None Remove="Windows\libnative.x64.dll" />
-      <Content Include="Windows\libnative.x64.dll">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Content>
+    <ItemGroup Condition=" '$(Platform)' == 'win-x64' ">
+        <Compile Include="Windows\*.cs" />
 
-      <None Remove="OSX\libnative.x64.dylib" />
-      <Content Include="OSX\libnative.x64.dylib">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Content>
+        <None Include="Windows\Microsoft.AspNetCore.Components.Web.rd.xml" />
+        <RdXmlFile Include="Windows\Microsoft.AspNetCore.Components.Web.rd.xml" />
+        
+        <None Remove="Windows\libnative.x64.dll" />
+        <Content Include="Windows\libnative.x64.dll">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(Platform)' == 'osx-x64' ">
+        <Compile Include="OSX\*.cs" />
+      
+        <None Remove="OSX\libnative.x64.dylib" />
+        <Content Include="OSX\libnative.x64.dylib">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 </Project>

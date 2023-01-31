@@ -16,6 +16,11 @@ internal static class Helper {
         ptr = null;
     }
 
+    public static unsafe void FreeHGlobal<T>(ref T** ptr) where T : unmanaged {
+        Marshal.FreeHGlobal(new IntPtr(ptr));
+        ptr = null;
+    }
+
     public static Int16 MakeWord(Byte low, Byte high) {
         return (Int16)(high << 8 | low);
     }

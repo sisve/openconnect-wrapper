@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using Mono.Unix.Native;
 
 namespace ConnectToUrl.OSX;
 
@@ -14,6 +15,7 @@ internal class OSXFunctionality : IOSFunctionality {
     private static extern Boolean dlclose(IntPtr handle);
 
     public const Int32 RTLD_LAZY = 1;
+
     [DllImport("libdl", CallingConvention = CallingConvention.Cdecl)]
     private static extern IntPtr dlopen(String lpFileName, Int32 flags);
 
@@ -36,7 +38,7 @@ internal class OSXFunctionality : IOSFunctionality {
         if (openconnectCallbackHandle == IntPtr.Zero) {
             throw new Exception(dlerror());
         }
-        
+
         var registerCallbackHandle = dlsym(libHandle, "register_managed_logger_callback");
         if (registerCallbackHandle == IntPtr.Zero) {
             throw new Exception(dlerror());
@@ -46,5 +48,30 @@ internal class OSXFunctionality : IOSFunctionality {
         registerCallback(callback);
 
         return Marshal.GetDelegateForFunctionPointer<OpenConnect.openconnect_progress_vfn>(openconnectCallbackHandle);
+    }
+
+    public Boolean SetSocketNonblocking(Int32 fd) {
+        var flags = Syscall.fcntl(fd, FcntlCommand.F_GETFL);
+        var newFlags = flags | (Int32)OpenFlags.O_NONBLOCK;
+        var fcntlResult = Syscall.fcntl(fd, FcntlCommand.F_SETFL, newFlags);
+        if (fcntlResult != 0) {
+            var errno = Stdlib.GetLastError();
+            var errmsg = Stdlib.strerror(errno);
+            Console.Error.WriteLine($"fcntl returned error {fcntlResult}, errno={errno}, errmsg='{errmsg}'");
+            return false;
+        }
+
+        return true;
+    }
+
+    public unsafe Int64 send(Int32 fd, Char* buffer, UInt32 length) {
+        var bytesSent = Syscall.send(fd, buffer, length, 0);
+        if (bytesSent < 0) {
+            var errno = Stdlib.GetLastError();
+            var errmsg = Stdlib.strerror(errno);
+            Console.Error.WriteLine($"write returned error {bytesSent}, errno={errno}, errmsg='{errmsg}'");
+        }
+        
+        return bytesSent;
     }
 }

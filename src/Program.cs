@@ -9,8 +9,6 @@ internal static class Program {
     private const Int32 SUCCESS = 0;
     private const Int32 FAILURE = 1;
 
-    [SupportedOSPlatform("Windows")]
-    [SupportedOSPlatform("OSX")]
     public static Int32 Main(String[] args) {
         CommandLineArgs? parsedArgs;
         if (!CommandLineArgs.TryParse(args, out parsedArgs)) {
@@ -30,7 +28,7 @@ internal static class Program {
             return FailWithExitCode(FAILURE);
         }
 
-        if (!Services.OSFunctionality.CheckForOpenConnectInstallation()) {
+        if (!Platform.OSFunctionality.CheckForOpenConnectInstallation()) {
             return FailWithExitCode(FAILURE);
         }
 

@@ -10,14 +10,18 @@ This repository contains a C# console application that uses the OpenConnect libr
 |                     | Windows 10 | macOS 10.15 |
 |---------------------|------------|-------------|
 | Persist credentials | Yes        | (WIP)       |
-| Login with browser  | (WIP)      | (WIP)       |
+| Login with webview  | Yes        | (WIP)       |
 
 ## Tested platforms 
 
 * Windows 10 64bit
 * macOS 10.15 Catalina 64bit Intel
 
-# Getting started on Windows
+# Windows
+
+## Getting started on Windows
+
+### Installing OpenConnect on Windows
 
 1. Download OpenConnect from https://gitlab.com/openconnect/openconnect/-/jobs/artifacts/master/download?job=MinGW64/GnuTLS
    The link only works sporadically, for unknown reasons. If it doesn't work, follow these steps to find the download:
@@ -29,15 +33,27 @@ This repository contains a C# console application that uses the OpenConnect libr
 4. Run openconnect-installer.exe
    1. When asked, accept to install TAP-Windows.
    2. When TAP-Windows asks, choose to install TAP Utilities.
-5. Go to the latest release at https://github.com/sisve/openconnect-wrapper/releases/latest
-   1. Download `connect-to-url.win-x64.exe`
-   2. Right-click the downloaded file, and click Properties. If the notice "This file came from another computer and might be blocked to help protect your computer" is visible, check the checkbox "Unlock". Click OK to save any changes and close the properties window.
-6. Create a shortcut on your desktop to `\path\to\connect-to-url.win-x64.exe https://vpn.domain.com/group`
-7. Configure the shortcut to run as administrator.
+
+### Downloading openconnect-wrapper on Windows
+
+1. Go to the latest release at https://github.com/sisve/openconnect-wrapper/releases/latest
+   1. If you need webview support, or if you are unsure, download `connect-to-url.win-x64.webview.exe`
+   2. If you do not need webview support, download `connect-to-url.win-x64.exe`
+   3. Right-click the downloaded file, and click Properties. If the notice "This file came from another computer and might be blocked to help protect your computer" is visible, check the checkbox "Unlock". Click OK to save any changes and close the properties window.
+2. Create a shortcut on your desktop to `\path\to\connect-to-url.win-x64.webview.exe https://vpn.domain.com/group`
+3. Configure the shortcut to run as administrator.
 
 To connect to several vpns, read more about multiple connections below, and repeat step 6 and 7 above to create a shortcut for every vpn.
 
-# Getting started on Mac
+## Persisting credentials on Windows
+
+This application can persist your vpn credentials between logins. Just check the checkbox to save the credentials, and Windows will handle it internally. The credentials are stored in Windows Credential Manager. To remove any persisted credentials, remove them from Windows Credential Manager.
+
+# Mac
+
+## Getting started on Mac
+
+This assumes that you have homebrew installed. Installation instructions for Homebrew can be found at https://brew.sh/
 
 1. Install OpenConnect (if you're using homebrew; `homebrew install openconnect`)
 2. Go to the latest release at https://github.com/sisve/openconnect-wrapper/releases/latest
@@ -54,10 +70,6 @@ To connect to several vpns, read more about multiple connections below, and repe
 * `--secondary-password push` will enter "push" as a secondary password. This is meant to automate the connection process when using Duo MFA.
 * `--log-level (error|warning|info|debug|trace)` configures the logging level. This is intended for debugging purposes.
 
-# Persisting credentials
-
-This application can persist your vpn credentials between logins. Just check the checkbox to save the credentials, and Windows will handle it internally. The credentials are stored in Windows Credential Manager. To remove any persisted credentials, remove them from Windows Credential Manager.
-
 # Multiple connections
 
 This applications supports multiple concurrent vpn connections, with some requirements.
@@ -68,7 +80,7 @@ This applications supports multiple concurrent vpn connections, with some requir
 
 If the option exists, prefer connect to vpns that are running as "split tunneling". This means that they declare some routes that should go over the vpn connection, and let the rest of the traffic stay on your local network.
 
-## Add more virtual ethernet adapters.
+## Add more virtual ethernet adapters on Windows
 
 Every vpn connection uses a "TAP virtual ethernet adapter". TAP-Windows created one during installation, but you need to create more if you want to connect to several vpns concurrently. To add another ethernet adapter, find the "Add a new TAP virtual ethernet adapter" on your start menu, and execute it with administrator privileges.
 
@@ -81,9 +93,16 @@ To later remove all virtual ethernet adapters, use the above steps for the start
 
 # Development and compiling
 
+## Windows 10
+
+1. Install OpenConnect according to the Getting Started guide
+2. Install .NET 7 SDK from https://dotnet.microsoft.com/en-us/download/dotnet/7.0
+3. Checkout
+4. Compile
+
 ## Mac
 
-This assumes that you have homebrew installed. Installation instructions for Homebrew can be found at https://brew.sh/
-
-1. Install .NET 7 SDK from https://dotnet.microsoft.com/en-us/download/dotnet/7.0
-2. Install OpenConnect with `homebrew install openconnect`
+1. Install OpenConnect according to the Getting Started guide
+2. Install .NET 7 SDK from https://dotnet.microsoft.com/en-us/download/dotnet/7.0
+3. Checkout
+4. Compile

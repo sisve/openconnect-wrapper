@@ -5,7 +5,6 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
 using System.Threading;
-using Mono.Unix.Native;
 using static OpenConnect;
 
 namespace ConnectToUrl;
@@ -47,7 +46,7 @@ internal unsafe class Connection {
 
         ProcessAuthFormDelegate = ProcessAuthForm;
         SetupTunDelegate = SetupTunHandler;
-        ProgressDelegate = Services.OSFunctionality.CreateOpenConnectLogger(ProgressCallback);
+        ProgressDelegate = Platform.OSFunctionality.CreateOpenConnectLogger(ProgressCallback);
     }
 
     public String? Url { get; init; }
@@ -60,22 +59,14 @@ internal unsafe class Connection {
         public openconnect_info* vpninfo;
     }
 
-    [SupportedOSPlatform("Windows")]
-    [SupportedOSPlatform("OSX")]
     internal Int32 Connect() {
         if (Url == null) {
             Console.Error.WriteLine("No Url specified.");
             return FAILURE;
         }
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-            // init winsock
-            var wsaResult = Windows.Winsock2.WSAStartup(Helper.MakeWord(1, 1), out _);
-            if (wsaResult != 0) {
-                Console.Error.WriteLine($"WSAStartup failed with {wsaResult}");
-                Console.Error.WriteLine("Check https://learn.microsoft.com/en-us/windows/win32/api/winsock/nf-winsock-wsastartup");
-                return FAILURE;
-            }
+        if (!Platform.OSFunctionality.Init()) {
+            return FAILURE;
         }
 
         _state = Helper.AllocHGlobal<State>();
@@ -105,6 +96,8 @@ internal unsafe class Connection {
 
         _state->vpninfo = vpninfo;
 
+        Platform.WebView?.Attach(vpninfo);
+
         _cmd_fd = openconnect_setup_cmd_pipe(vpninfo);
         if (_cmd_fd == INVALID_SOCKET) {
             var lastError = Marshal.GetLastWin32Error();
@@ -113,7 +106,7 @@ internal unsafe class Connection {
             goto failure;
         }
 
-        if (!SetSocketNonblocking(_cmd_fd)) {
+        if (!Platform.OSFunctionality.SetSocketNonblocking(_cmd_fd)) {
             return FAILURE;
         }
 
@@ -185,40 +178,6 @@ internal unsafe class Connection {
 
         Helper.FreeHGlobal(ref _state);
         return FAILURE;
-    }
-    
-    [SupportedOSPlatform("Windows")]
-    [SupportedOSPlatform("OSX")]
-    private static Boolean SetSocketNonblocking(Int32 fd) {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-            var mode = 0u; // blocking
-            var FIONBIO = -2147195266;
-            var ioctlResult = Windows.Winsock2.ioctlsocket(new IntPtr(fd), FIONBIO, &mode);
-            if (ioctlResult != 0) {
-                Console.Error.WriteLine($"ioctlsocket returned error {ioctlResult}");
-                Console.Error.WriteLine("Check https://learn.microsoft.com/en-us/windows/win32/api/winsock/nf-winsock-ioctlsocket");
-                return false;
-            }
-
-            return true;
-        }
-        
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-            var flags = Syscall.fcntl(fd, FcntlCommand.F_GETFL);
-            var newFlags = flags | (Int32)OpenFlags.O_NONBLOCK;
-            var fcntlResult = Syscall.fcntl(fd, FcntlCommand.F_SETFL, newFlags);
-            if (fcntlResult != 0) {
-                var errno = Stdlib.GetLastError();
-                var errmsg = Stdlib.strerror(errno);
-                Console.Error.WriteLine($"fcntl returned error {fcntlResult}, errno={errno}, errmsg='{errmsg}'");
-                return false;
-            }
-            
-            return true;
-        }
-
-        Console.Error.WriteLine($"SetSocketNonblocking: Unsupported platform '{RuntimeInformation.RuntimeIdentifier}'");
-        return false;
     }
 
     private static void SetupTunHandler(void* _privdata) {
@@ -368,7 +327,7 @@ internal unsafe class Connection {
 
                 BoxContent("Auth: Showing user interface to ask for credentials...");
                 try {
-                    _currentCredentials = Services.CredentialManager.ForceAskForCredentials(Url!, messageText);
+                    _currentCredentials = Platform.CredentialManager.ForceAskForCredentials(Url!, messageText);
                 } catch (NotSupportedException) {
                     BoxContent("Auth: Credential manager returned not-supported.");
                     goto noCredentialManager;
@@ -376,7 +335,7 @@ internal unsafe class Connection {
             } else {
                 BoxContent("Auth: Asking user for potentially stored credentials...");
                 try {
-                    _currentCredentials = Services.CredentialManager.AskForCredentials(Url!, messageText);
+                    _currentCredentials = Platform.CredentialManager.AskForCredentials(Url!, messageText);
                 } catch (NotSupportedException) {
                     BoxContent("Auth: Credential manager returned not-supported.");
                     goto noCredentialManager;
@@ -392,7 +351,7 @@ internal unsafe class Connection {
             newValues["username"] = _currentCredentials.Username;
             newValues["password"] = _currentCredentials.Password;
         }
-        
+
         noCredentialManager:
 
         if (_isFirstAuthAttempt && formFields.ContainsKey("secondary_password") && SecondaryPassword != null) {
@@ -402,6 +361,10 @@ internal unsafe class Connection {
 
         var missingFormFields = formFields.Values
             .Where(x => !newValues.ContainsKey(x.Name))
+
+            // The end-user cannot manually input SSO fields
+            .Where(x => x.Type != OC_FORM_OPT_TYPE.SSO_USER)
+            .Where(x => x.Type != OC_FORM_OPT_TYPE.SSO_TOKEN)
             .ToArray();
 
         if (missingFormFields.Any()) {
@@ -431,14 +394,13 @@ internal unsafe class Connection {
         ocField = form->opts;
         while (ocField != null) {
             var fieldName = Helper.PtrToStringAnsi(ocField->name);
-            var value = newValues[fieldName!];
-            openconnect_set_option_value(ocField, value);
+            if (newValues.TryGetValue(fieldName!, out var value)) {
+                _ = openconnect_set_option_value(ocField, value);
+            }
 
             ocField = ocField->next;
         }
 
-        BoxContent("Auth: Sending credentials to server.");
-        BoxContent();
         BoxBorderBottom();
 
         _isFirstAuthAttempt = false;
@@ -492,7 +454,7 @@ internal unsafe class Connection {
 
     private static void ProgressCallback(void* _privdata, Int32 level, Char* formatted) {
         State* privdata = (State*)_privdata;
-        
+
         // Unclear naming; the numeric values are lower for severe log levels
         // Choosing PRG_INFO (1) means we should discard PRG_DEBUG (2) and
         // PRG_TRACE (3).
@@ -553,31 +515,13 @@ internal unsafe class Connection {
         }
     }
 
-    [SupportedOSPlatform("Windows")]
-    [SupportedOSPlatform("OSX")]
     public void Disconnect() {
         if (_cmd_fd == INVALID_SOCKET) {
             Console.Error.WriteLine("The command socket has been destroyed.");
             return;
         }
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-            var bytesSent = Windows.Winsock2.send(_cmd_fd, OC_CMD_CANCEL, 1, 0);
-            if (bytesSent < 0) {
-                Console.Error.WriteLine($"send returned error {bytesSent}");
-                return;
-            }
-        } else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-            var bytesSent = Syscall.write(_cmd_fd, OC_CMD_CANCEL, 1);
-            if (bytesSent < 0) {
-                var errno = Stdlib.GetLastError();
-                var errmsg = Stdlib.strerror(errno);
-                Console.Error.WriteLine($"write returned error {bytesSent}, errno={errno}, errmsg='{errmsg}'");
-                return;
-            }
-        } else {
-            throw new PlatformNotSupportedException();
-        }
+        Platform.OSFunctionality.send(_cmd_fd, OC_CMD_CANCEL, 1);
 
         _loopThread.Join();
     }
