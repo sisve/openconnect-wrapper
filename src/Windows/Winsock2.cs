@@ -26,22 +26,22 @@ internal static class Winsock2 {
 
     [DllImport("Ws2_32.dll", EntryPoint = "ioctlsocket")]
     public static extern unsafe Int32 ioctlsocket(
-        [OriginalType("SOCKET")]
+        [SourceType("SOCKET")]
         IntPtr s,
 
-        [OriginalType("long")]
+        [SourceType("long")]
         Int32 cmd,
 
-        [OriginalType("u_long")]
+        [SourceType("u_long")]
         UInt32* argp
     );
 
     [DllImport("ws2_32.dll", EntryPoint = "send", SetLastError = true)]
     public static extern unsafe Int32 send(
-        [OriginalType("SOCKET")]
+        [SourceType("SOCKET")]
         IntPtr s,
 
-        [OriginalType("const char*")]
+        [SourceType("const char*")]
         Char* buf,
 
         Int32 len,

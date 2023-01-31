@@ -264,7 +264,7 @@ internal unsafe class Connection {
 
     private record AuthFormField(String Name, OC_FORM_OPT_TYPE Type);
 
-    private Int32 ProcessAuthForm(void* _privdata, oc_auth_form* form) {
+    private OC_FORM_RESULT ProcessAuthForm(void* _privdata, oc_auth_form* form) {
         String F(String? input) {
             return input switch {
                 null => "<null>",
@@ -386,7 +386,7 @@ internal unsafe class Connection {
             if (_currentCredentials == null) {
                 // The user did not provide any credentials.
                 BoxContent("Auth: No credentials given, cancelling login");
-                return OC_FORM_RESULT_ERR;
+                return OC_FORM_RESULT.ERR;
             }
 
             newValues["username"] = _currentCredentials.Username;
@@ -419,7 +419,7 @@ internal unsafe class Connection {
                 if (String.IsNullOrWhiteSpace(input)) {
                     BoxContent();
                     BoxBorderBottom();
-                    return OC_FORM_RESULT_ERR;
+                    return OC_FORM_RESULT.ERR;
                 }
 
                 newValues[formField.Name] = input;
@@ -442,7 +442,7 @@ internal unsafe class Connection {
         BoxBorderBottom();
 
         _isFirstAuthAttempt = false;
-        return OC_FORM_RESULT_OK;
+        return OC_FORM_RESULT.OK;
     }
 
     private static String? ReadSecretFromConsole() {

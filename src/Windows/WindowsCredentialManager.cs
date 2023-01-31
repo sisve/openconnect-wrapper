@@ -15,16 +15,16 @@ internal class WindowsCredentialManager : ICredentialManager {
     private struct CREDUI_INFOW {
         public Int32 cbSize;
 
-        [OriginalType("HWND")]
+        [SourceType("HWND")]
         public IntPtr hwndParent;
 
-        [OriginalType("PCWSTR")]
+        [SourceType("PCWSTR")]
         public String pszMessageText;
 
-        [OriginalType("PCWSTR")]
+        [SourceType("PCWSTR")]
         public String pszCaptionText;
 
-        [OriginalType("HBITMAP")]
+        [SourceType("HBITMAP")]
         public IntPtr hbmBanner;
     }
 
@@ -51,39 +51,39 @@ internal class WindowsCredentialManager : ICredentialManager {
 
     [DllImport("credui.dll", EntryPoint = "CredUIPromptForCredentialsW", CharSet = CharSet.Unicode)]
     private static extern Int32 CredUIPromptForCredentialsW(
-        [OriginalType("PCREDUI_INFOW")]
+        [SourceType("PCREDUI_INFOW")]
         ref CREDUI_INFOW creditUR,
 
-        [OriginalType("PCWSTR")]
+        [SourceType("PCWSTR")]
         String targetName,
 
-        [OriginalType("PCtxtHandle")]
+        [SourceType("PCtxtHandle")]
         IntPtr pContext,
 
         Int32 iError,
 
-        [OriginalType("PWSTR")]
+        [SourceType("PWSTR")]
         StringBuilder userName,
 
-        [OriginalType("ULONG")]
+        [SourceType("ULONG")]
         Int32 maxUserName,
 
-        [OriginalType("PWSTR")]
+        [SourceType("PWSTR")]
         StringBuilder password,
 
-        [OriginalType("ULONG")]
+        [SourceType("ULONG")]
         Int32 maxPassword,
 
         [MarshalAs(UnmanagedType.Bool)]
         ref Boolean pfSave,
 
-        [OriginalType("DWORD")]
+        [SourceType("DWORD")]
         CREDUI_FLAGS flags
     );
 
     [DllImport("credui.dll", EntryPoint = "CredUIConfirmCredentialsW", CharSet = CharSet.Unicode)]
     private static extern Int32 CredUIConfirmCredentialsW(
-        [OriginalType("PCWSTR")]
+        [SourceType("PCWSTR")]
         String targetName,
 
         [MarshalAs(UnmanagedType.Bool)]
