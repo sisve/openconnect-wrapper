@@ -1,6 +1,23 @@
 This repository contains a C# console application that uses the OpenConnect library to establish a vpn connection to a specified url. Credentials are provided using standard operating system apis, with the option to persist the credentials.
 
-# Getting started
+# Supported functionality and platforms
+
+* 2FA with Duo MFA/Mobile (`--secondary-password push`)
+* 2FA with SMS
+
+## Functionality
+
+|                     | Windows 10 | macOS 10.15 |
+|---------------------|------------|-------------|
+| Persist credentials | Yes        | (WIP)       |
+| Login with browser  | (WIP)      | (WIP)       |
+
+## Tested platforms 
+
+* Windows 10 64bit
+* macOS 10.15 Catalina 64bit Intel
+
+# Getting started on Windows
 
 1. Download OpenConnect from https://gitlab.com/openconnect/openconnect/-/jobs/artifacts/master/download?job=MinGW64/GnuTLS
    The link only works sporadically, for unknown reasons. If it doesn't work, follow these steps to find the download:
@@ -8,16 +25,29 @@ This repository contains a C# console application that uses the OpenConnect libr
    2. From above, try the "Download artifacts" button until you find the pipeline that has downloads.
    3. Download the artifact named `MinGW64/GnuTLS:archive`
 2. Extract openconnect-installer.exe from the downloaded file.
-3. Right-click openconnect-installer.exe, click Properties. If the notice "This file came from another computer and might be blocked to help protect your computer" is visible, check the checkbox "Unlock". Click OK to save any changes and close the properties window.
+3. Right-click openconnect-installer.exe, and click Properties. If the notice "This file came from another computer and might be blocked to help protect your computer" is visible, check the checkbox "Unlock". Click OK to save any changes and close the properties window.
 4. Run openconnect-installer.exe
    1. When asked, accept to install TAP-Windows.
    2. When TAP-Windows asks, choose to install TAP Utilities.
-5. Download the latest release from https://github.com/sisve/openconnect-wrapper/releases
-   1. If you are on Windows 10 64bit, download `connect-to-url.win-x64.exe`
+5. Go to the latest release at https://github.com/sisve/openconnect-wrapper/releases/latest
+   1. Download `connect-to-url.win-x64.exe`
+   2. Right-click the downloaded file, and click Properties. If the notice "This file came from another computer and might be blocked to help protect your computer" is visible, check the checkbox "Unlock". Click OK to save any changes and close the properties window.
 6. Create a shortcut on your desktop to `\path\to\connect-to-url.win-x64.exe https://vpn.domain.com/group`
 7. Configure the shortcut to run as administrator.
 
 To connect to several vpns, read more about multiple connections below, and repeat step 6 and 7 above to create a shortcut for every vpn.
+
+# Getting started on Mac
+
+1. Install OpenConnect (if you're using homebrew; `homebrew install openconnect`)
+2. Go to the latest release at https://github.com/sisve/openconnect-wrapper/releases/latest
+   1. Download `connect-to-url.osx-x64`
+3. Using Script Editor, create a new script
+   ```
+   do shell script "\"/path/to/connect-to-url.osx-x64\" https://vpn-domain.com/group"
+   quit
+   ```
+4. Save the script on the desktop
 
 # Commandline options
 
