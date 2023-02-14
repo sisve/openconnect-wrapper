@@ -54,6 +54,20 @@
         <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     </PropertyGroup>
     
+    <Target Name="PrintMsbuildProperties" BeforeTargets="CheckForImplicitPackageReferenceOverrides">
+        <Message Text="List of Msbuild properties from custom Target 'PrintMsbuildProperties' in project file:" Importance="high" />
+        <Message Text="  OS = '$(OS)'" Importance="high" />
+        <Message Text="  Configuration = '$(Configuration)'" Importance="high" />
+        <Message Text="  Platform = '$(Platform)'" Importance="high" />
+    </Target>
+    
+    <!-- Invoking "dotnet build" will compile using Configuration=Debug and
+         Platform=AnyCPU. We use this to provide a reasonable default. -->
+    <PropertyGroup Condition=" '$(OS)' == 'Windows_NT' and '$(Configuration)|$(Platform)' == 'Debug|AnyCPU'  ">
+        <Configuration>webview</Configuration>
+        <Platform>win-x64</Platform>
+    </PropertyGroup>
+    
     <PropertyGroup Condition=" '$(Platform)' == 'win-x64' ">
         <DefineConstants>WINDOWS</DefineConstants>
         <TargetFramework>net7.0</TargetFramework>
