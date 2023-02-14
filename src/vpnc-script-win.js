@@ -273,6 +273,17 @@ case "disconnect":
         run("netsh interface ipv6 delete address " + env("TUNIDX") + " " + env("INTERNAL_IP6_ADDRESS") + " store=active");
     }
 
+    // SISVE: Remove routes
+    if (env("CISCO_SPLIT_INC")) {
+        for (var i = 0 ; i < parseInt(env("CISCO_SPLIT_INC")); i++) {
+            var network = env("CISCO_SPLIT_INC_" + i + "_ADDR");
+            var netmask = env("CISCO_SPLIT_INC_" + i + "_MASK");
+            var netmasklen = env("CISCO_SPLIT_INC_" + i + "_MASKLEN");
+
+            run("route delete " + network + " mask " + netmask);
+        }
+    }
+
     // Delete Legacy IP split-exclude routes
     if (env("CISCO_SPLIT_EXC")) {
         echo(INFO, "Removing Legacy IP split-exclude routes");
