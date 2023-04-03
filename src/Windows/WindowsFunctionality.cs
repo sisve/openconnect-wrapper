@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using System.Security.Principal;
 
 namespace ConnectToUrl.Windows;
 
@@ -43,6 +44,20 @@ internal class WindowsFunctionality : IOSFunctionality {
         Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH") + ";" + dllDirectory);
 
         return true;
+    }
+
+    public Boolean HasPermissions() {
+        using (var identity = WindowsIdentity.GetCurrent()) {
+            var principal = new WindowsPrincipal(identity);
+            var isAdministrator = principal.IsInRole(WindowsBuiltInRole.Administrator);
+            if (isAdministrator) {
+                return true;
+            }
+        }
+
+        Console.Error.WriteLine("You do not have enough permissions. Try running your Terminal,");
+        Console.Error.WriteLine("Command Prompt, or shortcut, as Administrator.");
+        return false;
     }
 
     public OpenConnect.openconnect_progress_vfn CreateOpenConnectLogger(Logger callback) {

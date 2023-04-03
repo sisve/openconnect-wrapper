@@ -14,6 +14,12 @@ internal unsafe interface IOSFunctionality {
     /// </summary>
     Boolean CheckForOpenConnectInstallation();
 
+    /// <summary>
+    ///   Determine if we have enough permissions to do what we need
+    ///   to connect to the Vpn.
+    /// </summary>
+    Boolean HasPermissions();
+
     OpenConnect.openconnect_progress_vfn CreateOpenConnectLogger(Logger callback);
 
     Boolean SetSocketNonblocking(Int32 fd);

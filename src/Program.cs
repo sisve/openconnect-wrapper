@@ -27,6 +27,10 @@ internal static class Program {
             return FailWithExitCode(FAILURE);
         }
 
+        if (!Platform.OSFunctionality.HasPermissions()) {
+            return FailWithExitCode(FAILURE);
+        }
+
         if (!Platform.OSFunctionality.CheckForOpenConnectInstallation()) {
             return FailWithExitCode(FAILURE);
         }

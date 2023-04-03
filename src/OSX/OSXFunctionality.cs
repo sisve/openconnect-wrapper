@@ -28,6 +28,16 @@ internal class OSXFunctionality : IOSFunctionality {
         return true;
     }
 
+    public Boolean CheckPermissions() {
+        var isRoot = Syscall.geteuid() == 0;
+        if (isRoot) {
+            return true;
+        }
+
+        Console.Error.WriteLine("You do not have enough permissions. Try running the tool with sudo.");
+        return false;
+    }
+
     public OpenConnect.openconnect_progress_vfn CreateOpenConnectLogger(Logger callback) {
         var libHandle = dlopen(Path.Combine(AppContext.BaseDirectory, "OSX", "libnative.x64.dylib"), RTLD_LAZY);
         if (libHandle == IntPtr.Zero) {
