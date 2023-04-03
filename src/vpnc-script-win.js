@@ -262,6 +262,8 @@ case "disconnect":
 
     // Delete explicit route for the VPN gateway
     // FIXME: handle IPv6 gateway address
+    // SISVE: TODO: Running several concurrent connections may create several identical routes.
+    // SISVE: TODO: How can we remove just one of these routes?
     echo(INFO, "Removing explicit route to VPN gateway " + env("VPNGATEWAY"));
     run("route delete " + env("VPNGATEWAY") + " mask 255.255.255.255");
 
@@ -280,7 +282,7 @@ case "disconnect":
             var netmask = env("CISCO_SPLIT_INC_" + i + "_MASK");
             var netmasklen = env("CISCO_SPLIT_INC_" + i + "_MASKLEN");
 
-            run("route delete " + network + " mask " + netmask);
+            run("route delete " + network + " mask " + netmask + " if " + env("TUNIDX"));
         }
     }
 
@@ -291,7 +293,9 @@ case "disconnect":
             var network = env("CISCO_SPLIT_EXC_" + i + "_ADDR");
             var netmask = env("CISCO_SPLIT_EXC_" + i + "_MASK");
             var netmasklen = env("CISCO_SPLIT_EXC_" + i + "_MASKLEN");
-            run("route delete " + network + " mask " + netmask );
+
+            // SISVE: Added [IF interface]
+            run("route delete " + network + " mask " + netmask + " if " + env("TUNIDX") );
         }
     }
 
