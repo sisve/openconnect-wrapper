@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 using System.Text;
 using System.Threading;
 using static OpenConnect;
@@ -12,7 +11,7 @@ namespace ConnectToUrl;
 /// <summary>
 ///   This class handles the interaction with the different openconnect_*
 ///   native method calls. This includes creating and configuring the
-///   connection, and handle authentication. 
+///   connection, and handle authentication.
 /// </summary>
 internal unsafe class Connection {
     private const Int32 SUCCESS = 0;
@@ -453,7 +452,7 @@ internal unsafe class Connection {
     }
 
     private static void ProgressCallback(void* _privdata, Int32 level, Char* formatted) {
-        State* privdata = (State*)_privdata;
+        var privdata = (State*)_privdata;
 
         // Unclear naming; the numeric values are lower for severe log levels
         // Choosing PRG_INFO (1) means we should discard PRG_DEBUG (2) and

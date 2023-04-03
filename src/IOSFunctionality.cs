@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ConnectToUrl; 
+namespace ConnectToUrl;
 
 internal unsafe delegate void Logger(void* privdata, Int32 level, Char* formatted);
 

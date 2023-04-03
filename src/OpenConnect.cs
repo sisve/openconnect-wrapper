@@ -20,10 +20,10 @@ internal abstract unsafe class OpenConnect {
         SSO_TOKEN = 6, // OC_FORM_OPT_SSO_TOKEN
         SSO_USER = 7, // OC_FORM_OPT_SSO_USER
     }
-    
+
     [SourceReference("openconnect.h", 226, 229)]
     public enum OC_FORM_RESULT {
-        ERR = -1, // OC_FORM_RESULT_ERR 
+        ERR = -1, // OC_FORM_RESULT_ERR
         OK = 0, // OC_FORM_RESULT_OK
         CANCELLED = 1, // OC_FORM_RESULT_CANCELLED
         NEWGROUP = 2, // OC_FORM_RESULT_NEWGROUP
@@ -36,7 +36,7 @@ internal abstract unsafe class OpenConnect {
         IGNORE = 0x0001, // OC_FORM_OPT_IGNORE
         OC_FORM_OPT_NUMERIC = 0x0002, // OC_FORM_OPT_NUMERIC
     }
-    
+
     /// <remarks>
     ///   char * fields are static (owned by XML parser) and don't need to be
     ///   freed by the form handling code — except for value, which for TEXT
@@ -53,7 +53,7 @@ internal abstract unsafe class OpenConnect {
 
         public Char* name;
         public Char* label;
-        
+
         /// <summary>
         ///   Use openconnect_set_option_value() to set this
         /// </summary>
@@ -64,7 +64,7 @@ internal abstract unsafe class OpenConnect {
 
         public void* reserved;
     }
-    
+
     /// <summary>
     ///   To set the value to a form use the following function
     /// </summary>
@@ -201,7 +201,7 @@ internal abstract unsafe class OpenConnect {
 
     [SourceReference("openconnect.h", 352)]
     public const Int32 PRG_DEBUG = 2;
-    
+
     [SourceReference("openconnect.h", 353)]
     public const Int32 PRG_TRACE = 3;
 
@@ -240,7 +240,7 @@ internal abstract unsafe class OpenConnect {
 
     [SourceReference("openconnect.h", 372)]
     public const Int32 RECONNECT_INTERVAL_MIN = 10;
-  
+
     [SourceReference("openconnect.h", 373)]
     public const Int32 RECONNECT_INTERVAL_MAX = 100;
 
@@ -290,7 +290,7 @@ internal abstract unsafe class OpenConnect {
         [SourceType("const struct oc_vpn_option**")]
         oc_vpn_option** dtls_options
     );
-    
+
     [SourceReference("openconnect.h", 668)]
     [DllImport(DllName, EntryPoint = "openconnect_disable_ipv6")]
     public static extern Int32 openconnect_disable_ipv6(
@@ -313,7 +313,7 @@ internal abstract unsafe class OpenConnect {
         openconnect_info* vpninfo,
         UInt32 val
     );
-    
+
     /// <summary>
     ///   Create a nonblocking pipe used to send cancellations and other commands
     ///   to the library. This returns a file descriptor to the write side of
@@ -335,7 +335,7 @@ internal abstract unsafe class OpenConnect {
     public static extern Int32 openconnect_make_cstp_connection(
         openconnect_info* vpninfo
     );
-    
+
     /// <summary>
     ///   Create a tun device through the OS kernel (typical use case). Both
     ///   strings are optional and can be NULL if desired.
@@ -365,7 +365,7 @@ internal abstract unsafe class OpenConnect {
         Int32 reconnect_timeout,
         Int32 reconnect_interval
     );
-    
+
     /// <summary>
     ///   When the server's certificate fails validation via the normal means,
     ///   this function is called with the offending certificate along with
@@ -393,7 +393,7 @@ internal abstract unsafe class OpenConnect {
     ///   they don't match, or openconnect_set_xmlsha1() has not been called,
     ///   then the new XML is downloaded and this function is invoked.
     /// </summary>
-    [SourceReference("openconnect.h", 750, 751)]    
+    [SourceReference("openconnect.h", 750, 751)]
     public delegate Int32 openconnect_write_new_config_vfn(
         void* privdata,
 
@@ -418,7 +418,7 @@ internal abstract unsafe class OpenConnect {
         [SourceType("struct oc_auth_form*")]
         oc_auth_form* form
     );
-    
+
     /// <summary>
     ///   Logging output which the user *may* want to see.
     /// </summary>
@@ -440,7 +440,7 @@ internal abstract unsafe class OpenConnect {
         [SourceType("...")]
         void* args
     );
-    
+
     [SourceReference("openconnect.h", 764, 769)]
     [DllImport(DllName, EntryPoint = "openconnect_vpninfo_new")]
     [return: NotNull]
@@ -456,13 +456,13 @@ internal abstract unsafe class OpenConnect {
 
         void* privdata
     );
-    
+
     [SourceReference("openconnect.h", 770)]
     [DllImport(DllName, EntryPoint = "openconnect_vpninfo_free")]
     public static extern void openconnect_vpninfo_free(
         openconnect_info* vpninfo
     );
-    
+
     [SourceReference("openconnect.h", 772, 774)]
     public delegate Int32 openconnect_open_webview_vfn(
         openconnect_info* vpninfo,
@@ -476,7 +476,7 @@ internal abstract unsafe class OpenConnect {
     [SourceReference("openconnect.h", 776, 777)]
     [DllImport(DllName, EntryPoint = "openconnect_set_webview_callback")]
     public static extern void openconnect_set_webview_callback(
-        openconnect_info* vpninfo, 
+        openconnect_info* vpninfo,
         openconnect_open_webview_vfn webview_fn
     );
 
@@ -488,7 +488,7 @@ internal abstract unsafe class OpenConnect {
         [SourceType("const struct oc_webview_result")]
         oc_webview_result* result
     );
-    
+
     /// <summary>
     ///   Callback for configuring the interface after tunnel is fully up.
     /// </summary>

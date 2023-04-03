@@ -20,4 +20,3 @@ internal class SourceReference : Attribute {
     public SourceReference(String filename, Int32 value) {}
     public SourceReference(String filename, Int32 start, Int32 end) {}
 }
-

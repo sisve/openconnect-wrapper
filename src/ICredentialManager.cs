@@ -1,6 +1,6 @@
 using System;
 
-namespace ConnectToUrl; 
+namespace ConnectToUrl;
 
 internal interface ICredentialManager {
     public IVpnCredentials? AskForCredentials(String url, String messageText);

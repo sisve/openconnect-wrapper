@@ -21,7 +21,7 @@ internal class WindowsFunctionality : IOSFunctionality {
 
     public Boolean Init() {
         // init winsock
-        var wsaResult = Windows.Winsock2.WSAStartup(Helper.MakeWord(1, 1), out _);
+        var wsaResult = Winsock2.WSAStartup(Helper.MakeWord(1, 1), out _);
         if (wsaResult != 0) {
             Console.Error.WriteLine($"WSAStartup failed with {wsaResult}");
             Console.Error.WriteLine("Check https://learn.microsoft.com/en-us/windows/win32/api/winsock/nf-winsock-wsastartup");
@@ -30,7 +30,7 @@ internal class WindowsFunctionality : IOSFunctionality {
 
         return true;
     }
-    
+
     public Boolean CheckForOpenConnectInstallation() {
         var dllDirectory = @"C:\Program Files\OpenConnect";
         var dllPath = Path.Combine(dllDirectory, "libopenconnect-5.dll");
@@ -70,7 +70,7 @@ internal class WindowsFunctionality : IOSFunctionality {
     public unsafe Boolean SetSocketNonblocking(Int32 fd) {
         var mode = 0u; // blocking
         var FIONBIO = -2147195266;
-        var ioctlResult = Windows.Winsock2.ioctlsocket(new IntPtr(fd), FIONBIO, &mode);
+        var ioctlResult = Winsock2.ioctlsocket(new IntPtr(fd), FIONBIO, &mode);
         if (ioctlResult != 0) {
             Console.Error.WriteLine($"ioctlsocket returned error {ioctlResult}");
             Console.Error.WriteLine("Check https://learn.microsoft.com/en-us/windows/win32/api/winsock/nf-winsock-ioctlsocket");

@@ -35,7 +35,7 @@ internal static class ConsoleQuickEdit {
 
         return DisposableAction.Noop;
     }
-    
+
     [SupportedOSPlatform("Windows")]
     private static IDisposable DisableWindows() {
         IntPtr stdinHandle;

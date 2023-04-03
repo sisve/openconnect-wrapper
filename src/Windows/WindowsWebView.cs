@@ -1,5 +1,4 @@
 ﻿#if WEBVIEW
-
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -17,7 +16,7 @@ namespace ConnectToUrl.Windows;
 [SupportedOSPlatform("Windows")]
 internal unsafe class WindowsWebView : IWebView {
     private readonly openconnect_open_webview_vfn CallbackDelegate = Callback;
-    
+
     public void Attach(openconnect_info* vpninfo) {
         openconnect_set_webview_callback(vpninfo, CallbackDelegate);
     }
@@ -43,7 +42,7 @@ internal unsafe class WindowsWebView : IWebView {
                             Height = 720,
                         };
                     }
-                    
+
                     form.Location = new Point(
                         scr.Bounds.X + (scr.WorkingArea.Width - form.Size.Width) / 2,
                         scr.Bounds.Y + (scr.WorkingArea.Height - form.Size.Height) / 2
@@ -63,7 +62,7 @@ internal unsafe class WindowsWebView : IWebView {
                 }
 
                 control.CoreWebView2!.WebResourceResponseReceived += (_, responseArgs) => {
-                    var webviewResult = Helper.AllocHGlobal<OpenConnect.oc_webview_result>();
+                    var webviewResult = Helper.AllocHGlobal<oc_webview_result>();
                     webviewResult->uri = Helper.StringToHGlobalAnsi(responseArgs.Request.Uri);
 
                     var cookieHeaders = responseArgs.Response!.Headers!.GetHeaders("Set-Cookie");
@@ -124,7 +123,7 @@ internal unsafe class WindowsWebView : IWebView {
 
             var options = new CoreWebView2EnvironmentOptions();
             options.AllowSingleSignOnUsingOSPrimaryAccount = true;
-            
+
             var environment = Wait(CoreWebView2Environment.CreateAsync(options: options));
             if (environment == null) {
                 Console.Error.WriteLine("CoreWebView2Environment.CreateAsync returned null");

@@ -98,7 +98,7 @@ internal class WindowsCredentialManager : ICredentialManager {
         const Int32 ERROR_NETWORK_ACCESS_DENIED = 65;
         return AskForCredentials(url, messageText, ERROR_NETWORK_ACCESS_DENIED, true);
     }
-    
+
     [SupportedOSPlatform("Windows")]
     private static IVpnCredentials? AskForCredentials(String url, String messageText, Int32 previousError, Boolean forceShowUI) {
         var credReq = new CREDUI_INFOW {

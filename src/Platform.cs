@@ -7,7 +7,7 @@ internal static class Platform {
 #if WINDOWS
         OSFunctionality = new Windows.WindowsFunctionality();
         CredentialManager = new Windows.WindowsCredentialManager();
-        
+
 #if WEBVIEW
         WebView = new Windows.WindowsWebView();
 #endif
@@ -21,6 +21,7 @@ internal static class Platform {
     }
 
     // ReSharper disable MemberInitializerValueIgnored
+    // ReSharper disable RedundantDefaultMemberInitializer
     // ReSharper disable ReplaceAutoPropertyWithComputedProperty
     internal static IOSFunctionality OSFunctionality { get; } = default!;
     internal static ICredentialManager CredentialManager { get; } = default!;

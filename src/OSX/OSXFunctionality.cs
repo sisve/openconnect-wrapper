@@ -71,7 +71,7 @@ internal class OSXFunctionality : IOSFunctionality {
             var errmsg = Stdlib.strerror(errno);
             Console.Error.WriteLine($"write returned error {bytesSent}, errno={errno}, errmsg='{errmsg}'");
         }
-        
+
         return bytesSent;
     }
 }

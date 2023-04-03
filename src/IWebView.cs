@@ -1,6 +1,6 @@
 ﻿using static OpenConnect;
 
-namespace ConnectToUrl; 
+namespace ConnectToUrl;
 
 internal unsafe interface IWebView {
     void Attach(openconnect_info* vpninfo);

@@ -1,6 +1,6 @@
 using System;
 
-namespace ConnectToUrl; 
+namespace ConnectToUrl;
 
 internal interface IVpnCredentials {
     String Username { get; }
