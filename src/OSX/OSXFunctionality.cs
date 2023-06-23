@@ -22,13 +22,13 @@ internal class OSXFunctionality : IOSFunctionality {
     [DllImport("libdl", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
     private static extern String dlerror();
 
-    public Boolean CheckForOpenConnectInstallation() {
+    public Boolean VerifyRequirements() {
         // TODO: Work in progress!
-        Console.WriteLine("TODO: CheckForOpenConnectInstallation");
+        Console.WriteLine("TODO: VerifyRequirements");
         return true;
     }
 
-    public Boolean CheckPermissions() {
+    public Boolean HasPermissions() {
         var isRoot = Syscall.geteuid() == 0;
         if (isRoot) {
             return true;

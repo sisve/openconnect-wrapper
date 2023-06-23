@@ -21,6 +21,17 @@ This repository contains a C# console application that uses the OpenConnect libr
 
 ## Getting started on Windows
 
+### Installing TAP-Windows
+
+TAP-Windows as originally packaged with OpenConnect, but has since been split 
+into a separate package that needs to be installed separately.
+
+1. Download the latest version of TAP-Windows from https://build.openvpn.net/downloads/releases/
+   The tap-windows binaries are at the bottom of the page.
+2. Right-click the downloaded file, and click Properties. If the notice "This file came from another computer and might be blocked to help protect your computer" is visible, check the checkbox "Unlock". Click OK to save any changes and close the properties window.
+3. Run the downloaded file
+4. When asked, install TAP Utilities
+
 ### Installing OpenConnect on Windows
 
 1. Download OpenConnect from https://gitlab.com/openconnect/openconnect/-/jobs/artifacts/master/download?job=MinGW64/GnuTLS
@@ -31,8 +42,6 @@ This repository contains a C# console application that uses the OpenConnect libr
 2. Extract openconnect-installer.exe from the downloaded file.
 3. Right-click openconnect-installer.exe, and click Properties. If the notice "This file came from another computer and might be blocked to help protect your computer" is visible, check the checkbox "Unlock". Click OK to save any changes and close the properties window.
 4. Run openconnect-installer.exe
-   1. When asked, accept to install TAP-Windows.
-   2. When TAP-Windows asks, choose to install TAP Utilities.
 
 ### Downloading openconnect-wrapper on Windows
 

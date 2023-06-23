@@ -32,7 +32,22 @@ internal class WindowsFunctionality : IOSFunctionality {
         return true;
     }
 
-    public Boolean CheckForOpenConnectInstallation() {
+    public Boolean VerifyRequirements() {
+        return CheckForTAPWindows() &&
+               CheckForOpenConnectInstallation();
+    }
+
+    private Boolean CheckForTAPWindows() {
+        var dir = @"C:\Program Files\TAP-Windows";
+        if (!Directory.Exists(dir)) {
+            Console.Error.WriteLine($"Missing directory {dir}, have you installed TAP-Windows?");
+            return false;
+        }
+
+        return true;
+    }
+
+    private Boolean CheckForOpenConnectInstallation() {
         var dllDirectory = @"C:\Program Files\OpenConnect";
         var dllPath = Path.Combine(dllDirectory, "libopenconnect-5.dll");
         if (!File.Exists(dllPath)) {

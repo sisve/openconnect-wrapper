@@ -31,7 +31,7 @@ internal static class Program {
             return FailWithExitCode(FAILURE);
         }
 
-        if (!Platform.OSFunctionality.CheckForOpenConnectInstallation()) {
+        if (!Platform.OSFunctionality.VerifyRequirements()) {
             return FailWithExitCode(FAILURE);
         }
 

@@ -10,9 +10,10 @@ internal unsafe interface IOSFunctionality {
     }
 
     /// <summary>
-    ///   Determine if we can find an installation of OpenConnect.
+    ///   Determine if we can find an installation of OpenConnect, and any other
+    ///   libraries needed for execution.
     /// </summary>
-    Boolean CheckForOpenConnectInstallation();
+    Boolean VerifyRequirements();
 
     /// <summary>
     ///   Determine if we have enough permissions to do what we need
