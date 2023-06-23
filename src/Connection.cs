@@ -364,6 +364,10 @@ internal unsafe class Connection {
             // The end-user cannot manually input SSO fields
             .Where(x => x.Type != OC_FORM_OPT_TYPE.SSO_USER)
             .Where(x => x.Type != OC_FORM_OPT_TYPE.SSO_TOKEN)
+
+            // Hide hidden fields.
+            .Where(x => x.Type != OC_FORM_OPT_TYPE.HIDDEN)
+
             .ToArray();
 
         if (missingFormFields.Any()) {
