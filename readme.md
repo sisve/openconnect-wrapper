@@ -34,14 +34,22 @@ into a separate package that needs to be installed separately.
 
 ### Installing OpenConnect on Windows
 
-1. Download OpenConnect from https://gitlab.com/openconnect/openconnect/-/jobs/artifacts/master/download?job=MinGW64/GnuTLS
-   The link only works sporadically, for unknown reasons. If it doesn't work, follow these steps to find the download:
-   1. Start at https://gitlab.com/openconnect/openconnect/-/pipelines?scope=finished&page=1&ref=master
-   2. From above, try the "Download artifacts" button until you find the pipeline that has downloads.
-   3. Download the artifact named `MinGW64/GnuTLS:archive`
-2. Extract openconnect-installer.exe from the downloaded file.
-3. Right-click openconnect-installer.exe, and click Properties. If the notice "This file came from another computer and might be blocked to help protect your computer" is visible, check the checkbox "Unlock". Click OK to save any changes and close the properties window.
-4. Run openconnect-installer.exe
+#### The easy way
+
+1. Download [openconnect-installer-MinGW64-GnuTLS-9.12.git.36.07a4dd2-0.fc40.exe](https://github.com/sisve/openconnect-wrapper/raw/master/deps/openconnect-installer-MinGW64-GnuTLS-9.12.git.36.07a4dd2-0.fc40.exe) from this repository.
+2. Right-click the downloaded installer, and click Properties. If the notice "This file came from another computer and might be blocked to help protect your computer" is visible, check the checkbox "Unlock". Click OK to save any changes and close the properties window.
+3. Run the installer.
+
+#### The harder way
+
+1. Download the installer from the internet
+    1. Go to https://copr.fedorainfracloud.org/coprs/dwmw2/openconnect/package/mingw-openconnect/ which hosts the builds for openconnect
+    2. Pick the newest successful build
+    3. Under Results, pick the chroot name `fedora-rawhide-x86_64`
+    4. Download the `mingw64-openconnect-installer-...` _rpm_ package.
+    5. Extract the rpm using something that supports zstd. (7-Zip 23.01, dated 2023-06-20, does not.)
+2. Right-click the downloaded installer, and click Properties. If the notice "This file came from another computer and might be blocked to help protect your computer" is visible, check the checkbox "Unlock". Click OK to save any changes and close the properties window.
+3. Run the installer.
 
 ### Downloading openconnect-wrapper on Windows
 
