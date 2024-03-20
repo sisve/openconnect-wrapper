@@ -73,8 +73,12 @@ internal unsafe class Connection {
 
         openconnect_info* vpninfo = null;
         try {
+            // https://gitlab.com/openconnect/openconnect/-/issues/665
+            // Newer servers require a user agent that starts with "AnyConnect".
+            var useragent = "AnyConnect-compatible OpenConnect VPN Agent";
+
             vpninfo = openconnect_vpninfo_new(
-                "Open AnyConnect VPN Agent",
+                useragent,
                 null,
                 null,
                 ProcessAuthFormDelegate,
