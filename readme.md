@@ -113,13 +113,13 @@ To later remove all virtual ethernet adapters, use the above steps for the start
 ## Windows 10
 
 1. Install OpenConnect according to the Getting Started guide
-2. Install .NET 7 SDK from https://dotnet.microsoft.com/en-us/download/dotnet/7.0
+2. Install .NET 8 SDK from https://dotnet.microsoft.com/en-us/download/dotnet/8.0
 3. Checkout
 4. Compile
 
 ## Mac
 
 1. Install OpenConnect according to the Getting Started guide
-2. Install .NET 7 SDK from https://dotnet.microsoft.com/en-us/download/dotnet/7.0
+2. Install .NET 8 SDK from https://dotnet.microsoft.com/en-us/download/dotnet/8.0
 3. Checkout
 4. Compile
