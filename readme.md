@@ -123,3 +123,9 @@ To later remove all virtual ethernet adapters, use the above steps for the start
 2. Install .NET 8 SDK from https://dotnet.microsoft.com/en-us/download/dotnet/8.0
 3. Checkout
 4. Compile
+
+# Third-Party Software Licenses
+
+This project dynamically loads and invokes [OpenConnect](https://gitlab.com/openconnect/openconnect) (LGPLv2.1) using standard `[DllImport(...)]` declarations.
+
+This project also contains _modified_ vpnc-scripts, taken from [openconnect/vpnc-scripts](https://gitlab.com/openconnect/vpnc-scripts) (GPL v2.0 or later). These are embedded into the compiled executable, extracted at runtime and invoked. This classifies as redistribution, and as such the project is also licensed as GPL v2.0 or later. 
