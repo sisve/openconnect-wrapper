@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -9,6 +10,14 @@ internal static class Program {
     private const Int32 FAILURE = 1;
 
     public static Int32 Main(String[] args) {
+        {
+            var executablePath = Environment.GetCommandLineArgs()[0];
+            var executableName = Path.GetFileNameWithoutExtension(executablePath);
+            Console.WriteLine($"{executableName} - command-line tool for connecting to VPNs supported by OpenConnect");
+            Console.WriteLine("Source is available at https://github.com/sisve/openconnect-wrapper/");
+            Console.WriteLine();
+        }
+
         CommandLineArgs? parsedArgs;
         if (!CommandLineArgs.TryParse(args, out parsedArgs)) {
             Console.Error.WriteLine("Failed to parse command line arguments.");
