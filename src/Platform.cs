@@ -15,6 +15,11 @@ internal static class Platform {
 #elif MACOS
         OSFunctionality = new OSX.OSXFunctionality();
         CredentialManager = new OSX.OSXCredentialManager();
+
+#elif LINUX
+        OSFunctionality = new Linux.LinuxFunctionality();
+        CredentialManager = new Linux.LinuxCredentialManager();
+
 #else
         throw new System.PlatformNotSupportedException();
 #endif

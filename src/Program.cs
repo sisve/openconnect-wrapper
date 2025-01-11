@@ -30,6 +30,8 @@ internal static class Program {
             /* allow */
         } else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
             /* allow */
+        } else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+            /* allow */
         } else {
             Console.WriteLine("This application does not support your operating system.");
             Console.WriteLine($"RuntimeInformation.RuntimeIdentifier='{RuntimeInformation.RuntimeIdentifier}'");
@@ -81,9 +83,24 @@ internal static class Program {
             }
         }
 
+        if (libraryName == OpenConnect.DllName && RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+            if (NativeLibrary.TryLoad(OpenConnect.LinuxLibraryName, assembly, searchPath, out var handle)) {
+                return handle;
+            }
+        }
+
         {
             if (NativeLibrary.TryLoad(libraryName, assembly, searchPath, out var handle)) {
                 return handle;
+            }
+        }
+
+        {
+            // https://github.com/Pkcs11Interop/Pkcs11Interop/issues/168#issuecomment-729985741
+            if (libraryName == "libdl" && RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+                if (NativeLibrary.TryLoad("libdl.so.2", assembly, searchPath, out var handle)) {
+                    return handle;
+                }
             }
         }
 

@@ -20,12 +20,15 @@ internal class VpnScript : DisposableAction {
 
     [SupportedOSPlatform("Windows")]
     [SupportedOSPlatform("OSX")]
+    [SupportedOSPlatform("Linux")]
     public static VpnScript Scoped() {
         String filenameBase;
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
             filenameBase = "vpnc-script-win";
         } else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+            filenameBase = "vpnc-script";
+        } else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
             filenameBase = "vpnc-script";
         } else {
             throw new PlatformNotSupportedException();
@@ -65,6 +68,7 @@ internal class VpnScript : DisposableAction {
 
     [SupportedOSPlatform("Windows")]
     [SupportedOSPlatform("OSX")]
+    [SupportedOSPlatform("Linux")]
     private static Files CreateFiles(String filenameBase) {
         for (var attempt = 0; attempt < 10; ++attempt) {
             var random = Path.GetRandomFileName();
@@ -91,7 +95,7 @@ internal class VpnScript : DisposableAction {
                 continue;
             }
 
-#if MACOS
+#if MACOS || LINUX
             var statResult = Mono.Unix.Native.Syscall.stat(scriptPath, out var statBuf);
             if (statResult != 0) {
                 var errno = Mono.Unix.Native.Stdlib.GetLastError();
@@ -119,6 +123,7 @@ internal class VpnScript : DisposableAction {
 
     [SupportedOSPlatform("Windows")]
     [SupportedOSPlatform("OSX")]
+    [SupportedOSPlatform("Linux")]
     private static String GetVpncScriptContent() {
         var assembly = typeof(Program).Assembly;
         String resourceName;
@@ -127,6 +132,8 @@ internal class VpnScript : DisposableAction {
             resourceName = $"{assembly.GetName().Name}.vpnc-script-win.js";
         } else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
             resourceName = $"{assembly.GetName().Name}.vpnc-script-osx.sh";
+        } else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+            resourceName = $"{assembly.GetName().Name}.vpnc-script-linux.sh";
         } else {
             throw new PlatformNotSupportedException();
         }

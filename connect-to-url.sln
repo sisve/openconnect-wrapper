@@ -9,11 +9,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "root", "root", "{B9468DB5-7
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		core|linux-x64 = core|linux-x64
 		core|osx-x64 = core|osx-x64
 		core|win-x64 = core|win-x64
 		webview|win-x64 = webview|win-x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{93610970-C259-4B0A-9A46-4C9FBA7F3383}.core|linux-x64.ActiveCfg = core|linux-x64
+		{93610970-C259-4B0A-9A46-4C9FBA7F3383}.core|linux-x64.Build.0 = core|linux-x64
 		{93610970-C259-4B0A-9A46-4C9FBA7F3383}.core|osx-x64.ActiveCfg = core|osx-x64
 		{93610970-C259-4B0A-9A46-4C9FBA7F3383}.core|osx-x64.Build.0 = core|osx-x64
 		{93610970-C259-4B0A-9A46-4C9FBA7F3383}.core|win-x64.ActiveCfg = core|win-x64

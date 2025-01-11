@@ -6,6 +6,7 @@ using ConnectToUrl;
 internal abstract unsafe class OpenConnect {
     internal const String DllName = "openconnect";
     internal const String WindowsDllName = "libopenconnect-5";
+    internal const String LinuxLibraryName = "libopenconnect.so.5";
 
     public const Int32 EAGAIN = 11;
     public const Int32 EINVAL = 22;

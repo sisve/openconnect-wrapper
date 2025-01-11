@@ -7,7 +7,7 @@
             A list of all possible platforms and target frameworks.
             The configuration will pick one below.
         -->
-        <Platforms>win-x64;osx-x64</Platforms>
+        <Platforms>win-x64;osx-x64;linux-x64</Platforms>
         <PlatformTarget>AnyCPU</PlatformTarget>
 
         <!-- Do not include all project files by default, we opt-in files below. -->
@@ -92,6 +92,13 @@
         <RuntimeIdentifier>osx-x64</RuntimeIdentifier>
     </PropertyGroup>
 
+    <PropertyGroup Condition=" '$(Platform)' == 'linux-x64' ">
+        <DefineConstants>LINUX</DefineConstants>
+        <TargetFramework>net8.0</TargetFramework>
+        <PlatformTarget>x64</PlatformTarget>
+        <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+    </PropertyGroup>
+
     <ItemGroup>
         <PackageReference Include="CommandLineParser" Version="2.9.1" />
         <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
@@ -102,6 +109,10 @@
     </ItemGroup>
 
     <ItemGroup Condition=" '$(Platform)' == 'osx-x64' ">
+        <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(Platform)' == 'linux-x64' ">
         <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
     </ItemGroup>
 
@@ -116,6 +127,9 @@
 
         <None Remove="vpnc-script-osx.sh" />
         <EmbeddedResource Include="vpnc-script-osx.sh" />
+
+        <None Remove="vpnc-script-linux.sh" />
+        <EmbeddedResource Include="vpnc-script-linux.sh" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(Platform)' == 'win-x64' ">
@@ -135,6 +149,15 @@
       
         <None Remove="OSX\libnative.x64.dylib" />
         <Content Include="OSX\libnative.x64.dylib">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(Platform)' == 'linux-x64' ">
+        <Compile Include="Linux\*.cs" />
+
+        <None Remove="Linux\libnative.x64.so" />
+        <Content Include="Linux\libnative.x64.so">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
     </ItemGroup>

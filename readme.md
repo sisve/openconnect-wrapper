@@ -16,6 +16,7 @@ This repository contains a C# console application that uses the OpenConnect libr
 
 * Windows 10 64bit
 * macOS 10.15 Catalina 64bit Intel
+* Ubuntu 24.04 Desktop
 
 # Windows
 
@@ -82,6 +83,20 @@ This assumes that you have homebrew installed. Installation instructions for Hom
    ```
 4. Save the script on the desktop
 
+# Ubuntu 24.04 Desktop
+
+## Getting started on Ubuntu
+
+1. Install OpenConnect (`apt install openconnect`) or the openconnect libraries (`apt install libopenconnect5`)
+2. Go to the latest release at https://github.com/sisve/openconnect-wrapper/releases/latest
+    1. Download `connect-to-url.linux-x64`
+3. Create a script
+   ```
+   #!/usr/bin/env bash
+   /path/to/connect-to-url.linux-x64 https://vpn-domain.com/group
+   ```
+4. Save the script on the desktop
+
 # Commandline options
 
 * `--secondary-password push` will enter "push" as a secondary password. This is meant to automate the connection process when using Duo MFA.
@@ -110,6 +125,8 @@ To later remove all virtual ethernet adapters, use the above steps for the start
 
 # Development and compiling
 
+Note that administrator/root privileges are required for adding new network interfaces. You may need to run your development tools as administrator/root to be able to run/debug the application.
+
 ## Windows 10
 
 1. Install OpenConnect according to the Getting Started guide
@@ -123,6 +140,14 @@ To later remove all virtual ethernet adapters, use the above steps for the start
 2. Install .NET 8 SDK from https://dotnet.microsoft.com/en-us/download/dotnet/8.0
 3. Checkout
 4. Compile
+
+## Ubuntu 24.04 Desktop
+
+1. Install OpenConnect according to the Getting Started guide
+2. Install .NET 8 SDK from https://dotnet.microsoft.com/en-us/download/dotnet/8.0
+3. Checkout
+4. Compile
+
 
 # Third-Party Software Licenses
 

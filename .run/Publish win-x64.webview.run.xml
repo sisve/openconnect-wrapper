@@ -1,6 +1,6 @@
 ﻿<component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Publish win-x64.webview" type="DotNetFolderPublish" factoryName="Publish to folder">
-    <riderPublish configuration="webview" delete_existing_files="true" include_native_libs_for_self_extract="true" platform="win-x64" produce_single_file="true" runtime="win-x64" self_contained="true" target_folder="$PROJECT_DIR$/../openconnect-wrapper-published/win-x64.webview" target_framework="net7.0-windows" uuid_high="-7826964297491592438" uuid_low="-7330087094586494077" />
+    <riderPublish configuration="webview" delete_existing_files="true" include_all_content_for_self_extract="true" include_native_libs_for_self_extract="true" platform="win-x64" produce_single_file="true" runtime="win-x64" self_contained="true" target_folder="$PROJECT_DIR$/../openconnect-wrapper-published/win-x64.webview" target_framework="net8.0" uuid_high="-7826964297491592438" uuid_low="-7330087094586494077" />
     <method v="2" />
   </configuration>
 </component>
