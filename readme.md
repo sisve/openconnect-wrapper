@@ -7,10 +7,10 @@ This repository contains a C# console application that uses the OpenConnect libr
 
 ## Functionality
 
-|                     | Windows 10 | macOS 10.15 |
-|---------------------|------------|-------------|
-| Persist credentials | Yes        | (WIP)       |
-| Login with webview  | Yes        | (WIP)       |
+|                     | Windows 10 | macOS 10.15 | Ubuntu 24.04 |
+|---------------------|------------|-------------|--------------|
+| Persist credentials | Yes        | Not yet     | Not yet      |
+| Login with webview  | Yes        | Not yet     | Not yet      |
 
 ## Tested platforms 
 
@@ -89,11 +89,12 @@ This assumes that you have homebrew installed. Installation instructions for Hom
 
 1. Install OpenConnect (`apt install openconnect`) or the openconnect libraries (`apt install libopenconnect5`)
 2. Go to the latest release at https://github.com/sisve/openconnect-wrapper/releases/latest
-    1. Download `connect-to-url.linux-x64`
+   1. Download `connect-to-url.linux-x64`
+   2. Mark the file as executable `chmod a+x connect-to-url.linux-x64`
 3. Create a script
    ```
    #!/usr/bin/env bash
-   /path/to/connect-to-url.linux-x64 https://vpn-domain.com/group
+   sudo /path/to/connect-to-url.linux-x64 https://vpn-domain.com/group
    ```
 4. Save the script on the desktop
 
