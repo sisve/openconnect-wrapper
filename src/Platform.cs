@@ -14,21 +14,20 @@ internal static class Platform {
 
 #elif MACOS
         OSFunctionality = new OSX.OSXFunctionality();
-        CredentialManager = new OSX.OSXCredentialManager();
 
 #elif LINUX
         OSFunctionality = new Linux.LinuxFunctionality();
-        CredentialManager = new Linux.LinuxCredentialManager();
+        CredentialManager = null;
+        CredentialStore = new Linux.LinuxCredentialStore();
 
 #else
         throw new System.PlatformNotSupportedException();
 #endif
     }
 
-    // ReSharper disable MemberInitializerValueIgnored
     // ReSharper disable RedundantDefaultMemberInitializer
-    // ReSharper disable ReplaceAutoPropertyWithComputedProperty
-    internal static IOSFunctionality OSFunctionality { get; } = default!;
-    internal static ICredentialManager CredentialManager { get; } = default!;
-    internal static IWebView? WebView { get; } = default;
+    internal static IOSFunctionality OSFunctionality { get; }
+    internal static ICredentialManager? CredentialManager { get; } = null;
+    internal static ICredentialStore? CredentialStore { get; } = null;
+    internal static IWebView? WebView { get; } = null;
 }

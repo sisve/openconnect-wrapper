@@ -67,6 +67,12 @@
         <Configuration>webview</Configuration>
         <Platform>win-x64</Platform>
     </PropertyGroup>
+
+    <!-- Default for linux -->
+    <PropertyGroup Condition=" '$(OS)' == 'Unix' and '$(Configuration)|$(Platform)' == 'Debug|AnyCPU'  ">
+        <Configuration>core</Configuration>
+        <Platform>linux-x64</Platform>
+    </PropertyGroup>
     
     <PropertyGroup Condition=" '$(Platform)' == 'win-x64' ">
         <DefineConstants>WINDOWS</DefineConstants>

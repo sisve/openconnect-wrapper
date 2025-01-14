@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -145,8 +146,13 @@ internal unsafe class Connection {
             goto failure;
         }
 
-        // Mark current credentials as working.
-        _currentCredentials?.Success();
+        try {
+            // Mark current credentials as working.
+            _currentCredentials?.Success();
+        } catch (Exception ex) {
+            Console.Error.WriteLine("Failed to mark credentials as successful.");
+            Console.Error.WriteLine($"{ex.GetType().Name}: {ex.Message}");
+        }
 
         var makeCstpConnectionResult = openconnect_make_cstp_connection(vpninfo);
         if (makeCstpConnectionResult != 0) {
@@ -235,30 +241,15 @@ internal unsafe class Connection {
             };
         }
 
+        var credentialManager = Platform.CredentialManager;
+        var credentialStore = Platform.CredentialStore;
+
         var formBanner = Helper.PtrToStringAnsi(form->banner);
         var formError = Helper.PtrToStringAnsi(form->error);
         var formAction = Helper.PtrToStringAnsi(form->action);
         var formMessage = Helper.PtrToStringAnsi(form->message);
         var formAuthId = Helper.PtrToStringAnsi(form->auth_id);
         var formMethod = Helper.PtrToStringAnsi(form->method);
-
-        void BoxContent(String content = "", Boolean newLine = true) {
-            if (newLine) {
-                Console.WriteLine("    ##  " + content);
-            } else {
-                Console.Write("    ##  " + content);
-            }
-        }
-
-        void BoxVerticalMargin() {
-            Console.WriteLine();
-            Console.WriteLine();
-        }
-
-        void BoxBorderBottom() {
-            Console.WriteLine("    ####################################################################");
-            BoxVerticalMargin();
-        }
 
         BoxVerticalMargin();
         Console.WriteLine("    ########################## AUTHENTICATION ##########################");
@@ -315,47 +306,27 @@ internal unsafe class Connection {
             ocField = ocField->next;
         }
 
-        if (formFields.ContainsKey("username") && formFields.ContainsKey("password")) {
-            BoxContent("Auth: Detected both username and password field.");
-
-            var messageText = String.IsNullOrWhiteSpace(formMessage)
-                ? $"Enter credentials for the VPN connection to {Url}"
-                : formMessage;
-
-            // We've been asked about credentials. If we already have credentials,
-            // assume those have been faulty.
-            if (_currentCredentials != null) {
-                BoxContent("Auth: Marking previous credentials as incorrect.");
-                _currentCredentials.Fail();
-
-                BoxContent("Auth: Showing user interface to ask for credentials...");
-                try {
-                    _currentCredentials = Platform.CredentialManager.ForceAskForCredentials(Url!, messageText);
-                } catch (NotSupportedException) {
-                    BoxContent("Auth: Credential manager returned not-supported.");
-                    goto noCredentialManager;
+        var isFormsLogin = formFields.ContainsKey("username") && formFields.ContainsKey("password");
+        if (isFormsLogin) {
+            if (TryReadFromCredentialManager(out _currentCredentials)) {
+                if (_currentCredentials == null) {
+                    // The credential manager did not provide any credentials.
+                    BoxContent("Auth: No credentials given, cancelling login");
+                    return OC_FORM_RESULT.ERR;
                 }
-            } else {
-                BoxContent("Auth: Asking user for potentially stored credentials...");
-                try {
-                    _currentCredentials = Platform.CredentialManager.AskForCredentials(Url!, messageText);
-                } catch (NotSupportedException) {
-                    BoxContent("Auth: Credential manager returned not-supported.");
-                    goto noCredentialManager;
+
+                newValues["username"] = _currentCredentials.Username;
+                newValues["password"] = _currentCredentials.Password;
+            } else if (_isFirstAuthAttempt && TryReadFromCredentialStore(out _currentCredentials)) {
+                // This is our first attempt, and we can try to ask the credential
+                // store for information.
+                if (_currentCredentials != null) {
+                    BoxContent("Auth: Detected 'username' and 'password' field, auto-filling on first login attempt.");
+                    newValues["username"] = _currentCredentials.Username;
+                    newValues["password"] = _currentCredentials.Password;
                 }
             }
-
-            if (_currentCredentials == null) {
-                // The user did not provide any credentials.
-                BoxContent("Auth: No credentials given, cancelling login");
-                return OC_FORM_RESULT.ERR;
-            }
-
-            newValues["username"] = _currentCredentials.Username;
-            newValues["password"] = _currentCredentials.Password;
         }
-
-        noCredentialManager:
 
         if (_isFirstAuthAttempt && formFields.ContainsKey("secondary_password") && SecondaryPassword != null) {
             BoxContent("Auth: Detected 'secondary_password' field, auto-filling on first login attempt.");
@@ -396,6 +367,23 @@ internal unsafe class Connection {
             }
 
             BoxContent();
+
+            // The user has filled in all missing fields in the above loop.
+            // The _currentCredentials is null since we have read it from
+            // the end-user, not the credential store. We can now create
+            // a credential object that can be used to save the credentials
+            // for later connection attempts.
+            if (_currentCredentials == null &&
+                credentialStore != null &&
+                newValues.TryGetValue("username", out var newUsername) &&
+                newValues.TryGetValue("password", out var newPassword)) {
+
+                BoxContent(" * Do you want to save the login credentials for future connections? [y/N] ", newLine: false);
+                var shouldSaveCredentials = Console.ReadLine() is "Y" or "y";
+                if (shouldSaveCredentials) {
+                    _currentCredentials = credentialStore.CreateCredentials(Url!, newUsername, newPassword);
+                }
+            }
         }
 
         ocField = form->opts;
@@ -412,6 +400,64 @@ internal unsafe class Connection {
 
         _isFirstAuthAttempt = false;
         return OC_FORM_RESULT.OK;
+
+        void BoxContent(String content = "", Boolean newLine = true) {
+            if (newLine) {
+                Console.WriteLine("    ##  " + content);
+            } else {
+                Console.Write("    ##  " + content);
+            }
+        }
+
+        void BoxVerticalMargin() {
+            Console.WriteLine();
+            Console.WriteLine();
+        }
+
+        void BoxBorderBottom() {
+            Console.WriteLine("    ####################################################################");
+            BoxVerticalMargin();
+        }
+
+        Boolean TryReadFromCredentialManager(out IVpnCredentials? result) {
+            if (credentialManager == null) {
+                result = null;
+                return false;
+            }
+
+            BoxContent("Auth: Detected both username and password field.");
+
+            var messageText = String.IsNullOrWhiteSpace(formMessage)
+                ? $"Enter credentials for the VPN connection to {Url}"
+                : formMessage;
+
+            // We've been asked about credentials. If we already have credentials,
+            // assume those have been faulty.
+            if (_currentCredentials != null) {
+                BoxContent("Auth: Marking previous credentials as incorrect.");
+                _currentCredentials.Fail();
+
+                BoxContent("Auth: Showing user interface to ask for credentials...");
+                result = credentialManager.ForceAskForCredentials(Url!, messageText);
+                return true;
+            } else {
+                BoxContent("Auth: Asking user for potentially stored credentials...");
+                result = credentialManager.AskForCredentials(Url!, messageText);
+                return true;
+            }
+        }
+
+        Boolean TryReadFromCredentialStore(out IVpnCredentials? result) {
+            if (credentialStore == null) {
+                result = null;
+                return false;
+            }
+
+            // This is our first attempt, and we can try to ask the credential
+            // store for information.
+            result = credentialStore.ReadCredentials(Url!);
+            return true;
+        }
     }
 
     private static String? ReadSecretFromConsole() {

@@ -2,10 +2,12 @@
 using System.IO;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using Mono.Unix.Native;
 
 namespace ConnectToUrl.Linux;
 
+[SupportedOSPlatform("Linux")]
 internal class LinuxFunctionality : IOSFunctionality {
     private delegate void register_managed_logger_callback(Logger callback);
 

@@ -7,10 +7,12 @@ This repository contains a C# console application that uses the OpenConnect libr
 
 ## Functionality
 
-|                     | Windows 10 | macOS 10.15 | Ubuntu 24.04 |
-|---------------------|------------|-------------|--------------|
-| Persist credentials | Yes        | Not yet     | Not yet      |
-| Login with webview  | Yes        | Not yet     | Not yet      |
+|                     | Windows 10 | macOS 10.15 | Ubuntu 24.04          |
+|---------------------|------------|-------------|-----------------------|
+| Persist credentials | Yes        | Not yet     | Yes, using libsecret* |
+| Login with webview  | Yes        | Not yet     | Yes, using libsecret* |
+
+Libsecret stores credentials in a local keyring. This will be the root's keyring since we run the application using sudo. 
 
 ## Tested platforms 
 
@@ -97,6 +99,14 @@ This assumes that you have homebrew installed. Installation instructions for Hom
    sudo /path/to/connect-to-url.linux-x64 https://vpn-domain.com/group
    ```
 4. Save the script on the desktop
+
+If you get `Failed to execute child process "dbus-launch" (Nu such file or directory)`, install dbus-x11 using `sudo apt install dbus-x11`
+
+To avoid being asked for your password at every launch (for sudo), add the following using `sudo visudo -f /etc/sudoers.d/vpn`.
+
+```
+your_username ALL = (root) NOPASSWD: /path/to/connect-to-url.linux-x64 *
+```
 
 # Commandline options
 
