@@ -30,10 +30,8 @@ TAP-Windows as originally packaged with OpenConnect, but has since been split
 into a separate package that needs to be installed separately.
 
 1. Download the latest version of TAP-Windows from https://build.openvpn.net/downloads/releases/
-   The tap-windows binaries are at the bottom of the page.
 2. Right-click the downloaded file, and click Properties. If the notice "This file came from another computer and might be blocked to help protect your computer" is visible, check the checkbox "Unlock". Click OK to save any changes and close the properties window.
 3. Run the downloaded file
-4. When asked, install TAP Utilities
 
 ### Installing OpenConnect on Windows
 
@@ -63,7 +61,7 @@ into a separate package that needs to be installed separately.
 2. Create a shortcut on your desktop to `\path\to\connect-to-url.win-x64.webview.exe https://vpn.domain.com/group`
 3. Configure the shortcut to run as administrator.
 
-To connect to several vpns, read more about multiple connections below, and repeat step 6 and 7 above to create a shortcut for every vpn.
+To connect to several vpns, read more about multiple connections below, and repeat step 2 and 3 above to create a shortcut for every vpn.
 
 ## Persisting credentials on Windows
 
@@ -125,14 +123,9 @@ If the option exists, prefer connect to vpns that are running as "split tunnelin
 
 ## Add more virtual ethernet adapters on Windows
 
-Every vpn connection uses a "TAP virtual ethernet adapter". TAP-Windows created one during installation, but you need to create more if you want to connect to several vpns concurrently. To add another ethernet adapter, find the "Add a new TAP virtual ethernet adapter" on your start menu, and execute it with administrator privileges.
+Every vpn connection uses a "TAP virtual ethernet adapter". TAP-Windows created one during installation, but you need to create more if you want to connect to several vpns concurrently. To add another ethernet adapter, open a command prompt as Administrator and execute `"C:\Program Files\TAP-Windows\bin\tapinstall.exe" install "C:\Program Files\TAP-Windows\driver\OemVista.inf" tap0901`
 
-The start menu entry, and the bat file mention below, is part of the TAP Utilities that was installed during the TAP-Windows installation.
-
-* You can right-click the start menu entry, wait for the folder `C:\ProgramData\Microsoft\Windows\Start Menu\Programs\TAP-Windows\Utilities` to open, then rightclick the shortcut and click Run as administrator. You're done.
-* If the start menu entry is missing, open a command prompt as Administrator and execute `"C:\Program Files\TAP-Windows\bin\tapinstall.exe" install "C:\Program Files\TAP-Windows\driver\OemVista.inf" tap0901`
-
-To later remove all virtual ethernet adapters, use the above steps for the start menu entry "Delete ALL TAP virtual ethernet adapters", or execute `"C:\Program Files\TAP-Windows\bin\tapinstall.exe" remove tap0901` in a command prompt running with administrator privileges.
+To later remove all virtual ethernet adapters, execute `"C:\Program Files\TAP-Windows\bin\tapinstall.exe" remove tap0901` in a command prompt running with administrator privileges.
 
 # Development and compiling
 
